@@ -17,4 +17,4 @@ jobs:
           cache: pip
       - run: python -m pip install -r requirements-dev.txt
       - run: python -m pytest -q
-      - run: python -m atendedoc evaluate --output reports/ci-evaluation.json
+      - run: python -m docora evaluate --output reports/ci-evaluation.json

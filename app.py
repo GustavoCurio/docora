@@ -1,14 +1,14 @@
-"""AtendeDoc: conversa com documentos e fontes ao lado das respostas."""
+"""Docora: conversa com documentos e fontes ao lado das respostas."""
 from hashlib import sha256
 import json
 import os
 from pathlib import Path
 import streamlit as st
-from atendedoc.assistant import ProviderError, answer_question
-from atendedoc.retrieval import KnowledgeIndex, demo_chunks, ingest_bytes
+from docora.assistant import ProviderError, answer_question
+from docora.retrieval import KnowledgeIndex, demo_chunks, ingest_bytes
 
 ROOT = Path(__file__).resolve().parent
-st.set_page_config(page_title="AtendeDoc · Conversas com fontes", page_icon="💬", layout="wide")
+st.set_page_config(page_title="Docora · Conversas com fontes", page_icon="💬", layout="wide")
 st.markdown("""<style>
 .stApp{background:#fcfaf7;color:#303044}.block-container{max-width:1450px;padding-top:4rem}
 h1,h2,h3{letter-spacing:-.035em;color:#353047}
@@ -20,7 +20,7 @@ h1,h2,h3{letter-spacing:-.035em;color:#353047}
 [data-testid="stChatInput"]{border-radius:18px;border-color:#d1c3df}
 @media(max-width:700px){.brand span{display:block;margin-left:0}.welcome h2{font-size:30px}}
 </style>""", unsafe_allow_html=True)
-st.markdown('<div class="brand">AtendeDoc<span>SEU ESPAÇO DE CONSULTA</span></div>', unsafe_allow_html=True)
+st.markdown('<div class="brand">Docora<span>SEU ESPAÇO DE CONSULTA</span></div>', unsafe_allow_html=True)
 st.divider()
 conversation, references = st.columns([2.15, 1], gap="large")
 
@@ -141,7 +141,7 @@ with sources_slot:
                     st.text(source["text"])
                     st.caption(f"Trecho {source['id']} · relevância lexical {source['score']:.3f}")
         st.download_button("Baixar esta consulta · JSON", json.dumps(history[selected_turn], ensure_ascii=False, indent=2),
-                           "atendedoc-consulta.json", mime="application/json")
+                           "docora-consulta.json", mime="application/json")
 with references:
     with st.expander("Sobre esta consulta"):
         st.write("TF-IDF combina palavras e caracteres para recuperar até três fontes. O modo local reproduz os trechos; a síntese com IA redige uma resposta e valida seus identificadores de referência.")
@@ -151,4 +151,4 @@ with references:
             report = json.loads(report_path.read_text("utf-8"))
             st.caption(f"Base demonstrativa: {report['total']} perguntas avaliadas · {report['pass_rate_pct']:.1f}% dos critérios atendidos. Avaliação local, sem medir um LLM externo.")
         st.caption("API: /health, /sources e /ask. Documentação em /docs.")
-        st.link_button("Projeto no GitHub", "https://github.com/GustavoCurio/atendedoc")
+        st.link_button("Projeto no GitHub", "https://github.com/GustavoCurio/docora")

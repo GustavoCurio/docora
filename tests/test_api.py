@@ -1,6 +1,6 @@
 from fastapi.testclient import TestClient
 
-from atendedoc.api import app
+from docora.api import app
 
 client = TestClient(app)
 

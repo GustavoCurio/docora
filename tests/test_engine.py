@@ -6,8 +6,8 @@ from unittest.mock import Mock
 
 import pytest
 
-from atendedoc.assistant import ProviderError, answer_question
-from atendedoc.retrieval import KnowledgeIndex, MAX_BYTES, chunks_from_text, demo_chunks, ingest_bytes
+from docora.assistant import ProviderError, answer_question
+from docora.retrieval import KnowledgeIndex, MAX_BYTES, chunks_from_text, demo_chunks, ingest_bytes
 
 CASES = json.loads((Path(__file__).resolve().parents[1] / "evals/questions.json").read_text(encoding="utf-8"))
 

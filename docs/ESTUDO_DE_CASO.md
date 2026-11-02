@@ -1,10 +1,10 @@
-# Estudo de caso — AtendeDoc
+# Estudo de caso — Docora
 
 ## Problema
 
 Equipes de atendimento precisam localizar regras e procedimentos em vários documentos. Uma resposta útil deve apresentar a origem da informação e reconhecer quando a base não contém o que foi perguntado.
 
-O AtendeDoc aborda esse problema com uma aplicação de consulta documental em português e um cenário demonstrativo de e-commerce.
+O Docora aborda esse problema com uma aplicação de consulta documental em português e um cenário demonstrativo de e-commerce.
 
 ## Solução
 

@@ -1,4 +1,4 @@
-"""API HTTP para consultar a base demonstrativa do AtendeDoc."""
+"""API HTTP para consultar a base demonstrativa do Docora."""
 from functools import lru_cache
 from typing import Literal
 
@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 from .assistant import ProviderError, answer_question
 from .retrieval import KnowledgeIndex, demo_chunks
 
-app = FastAPI(title="AtendeDoc API", version="1.0.0", description="Atendimento baseado em documentos com fontes rastreáveis.")
+app = FastAPI(title="Docora API", version="1.0.0", description="Atendimento baseado em documentos com fontes rastreáveis.")
 
 
 @lru_cache(maxsize=1)

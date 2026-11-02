@@ -1,4 +1,4 @@
-"""Avaliação reproduzível e consultas do AtendeDoc pelo terminal."""
+"""Avaliação reproduzível e consultas do Docora pelo terminal."""
 import argparse
 from datetime import datetime, timezone
 import json

@@ -1,10 +1,10 @@
-# AtendeDoc
+# Docora
 
 **A resposta começa nos seus documentos — e mostra de onde veio.**
 
 Converse em português com políticas, produtos e procedimentos. Cada consulta recupera trechos relacionados à pergunta e apresenta o documento, a seção e a posição da informação. A interface reúne uma conversa central e um painel de fontes, com consulta local e síntese generativa opcional.
 
-![Conversa no AtendeDoc com as fontes da resposta ao lado](docs/images/conversa.jpg)
+![Conversa no Docora com as fontes da resposta ao lado](docs/images/conversa.jpg)
 
 [Estudo de caso](docs/ESTUDO_DE_CASO.md) · [Arquitetura](docs/ARQUITETURA.md) · [Avaliação](reports/evaluation.json)
 
@@ -100,8 +100,8 @@ Os resultados descrevem um conjunto pequeno e específico da base fictícia. A r
 Para reproduzir a avaliação ou consultar pelo terminal:
 
 ```powershell
-.\.venv\Scripts\python.exe -m atendedoc evaluate
-.\.venv\Scripts\python.exe -m atendedoc ask "Como posso devolver um produto?"
+.\.venv\Scripts\python.exe -m docora evaluate
+.\.venv\Scripts\python.exe -m docora ask "Como posso devolver um produto?"
 ```
 
 ## Síntese com IA opcional
@@ -123,7 +123,7 @@ A busca desta versão é lexical, sem embeddings semânticos. A geração por LL
 ## API local
 
 ```powershell
-.\.venv\Scripts\python.exe -m uvicorn atendedoc.api:app --host 127.0.0.1 --port 8001
+.\.venv\Scripts\python.exe -m uvicorn docora.api:app --host 127.0.0.1 --port 8001
 ```
 
 Documentação interativa: `http://127.0.0.1:8001/docs`.
@@ -171,10 +171,10 @@ flowchart LR
 | Caminho | Responsabilidade |
 |---|---|
 | `app.py` | Conversa, biblioteca, histórico e fontes |
-| `atendedoc/retrieval.py` | Ingestão, limites, trechos e busca lexical |
-| `atendedoc/assistant.py` | Respostas, encaminhamentos e validação de citações |
-| `atendedoc/api.py` | Integração HTTP |
-| `atendedoc/__main__.py` | Consulta e avaliação pelo terminal |
+| `docora/retrieval.py` | Ingestão, limites, trechos e busca lexical |
+| `docora/assistant.py` | Respostas, encaminhamentos e validação de citações |
+| `docora/api.py` | Integração HTTP |
+| `docora/__main__.py` | Consulta e avaliação pelo terminal |
 | `data/knowledge_base/` | Documentos demonstrativos da Lume Casa |
 | `evals/questions.json` | Perguntas e critérios de verificação |
 

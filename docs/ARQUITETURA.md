@@ -50,7 +50,7 @@ A API usa a base demonstrativa do servidor e não inclui autenticação de usuá
 
 ```bash
 python -m pytest -q
-python -m atendedoc evaluate
+python -m docora evaluate
 ```
 
 O relatório detalha os 28 casos de referência. Recuperação de fonte @3 mede a presença da seção esperada entre até três fontes. A taxa de critérios atendidos combina esse resultado com o status esperado. São métricas do cenário demonstrativo, sem inferência de generalização para outras empresas ou bases.
