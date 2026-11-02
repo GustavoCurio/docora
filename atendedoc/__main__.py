@@ -11,6 +11,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def evaluate(cases, index):
+    """Verifica status e recuperação de fontes nos casos de referência.
+
+    Args:
+        cases: Casos com question/expected_status e, quando aplicável, source/section.
+        index: Biblioteca sobre a qual todas as perguntas serão consultadas.
+
+    Returns:
+        Relatório com data UTC, critérios atendidos, recall de fonte @3 e
+        resultado individual dos casos. A lista de casos deve ser não vazia.
+
+    Executa somente a consulta extrativa. Recall considera os casos com
+    fonte esperada e não mede a redação de um modelo generativo.
+    """
     results = []
     answerable = hits = 0
     for case in cases:
@@ -32,6 +45,12 @@ def evaluate(cases, index):
 
 
 def main():
+    """Oferece os subcomandos ask e evaluate sobre a biblioteca demonstrativa.
+
+    ask imprime a resposta em JSON; evaluate grava o relatório no caminho
+    escolhido e encerra com código 1 se algum caso não cumprir seu critério.
+    O código de sucesso é zero. Falhas de leitura ou gravação são propagadas.
+    """
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     assessment = sub.add_parser("evaluate")

@@ -27,11 +27,13 @@ ANSWER_SCHEMA = {
 
 
 class ProviderError(RuntimeError):
+    """Falha na chamada externa ou na validação de sua resposta estruturada."""
     pass
 
 
 @dataclass
 class Answer:
+    """Resultado da consulta com status, mensagem, modo, fontes e duração em milissegundos."""
     status: str
     message: str
     mode: str
@@ -39,10 +41,23 @@ class Answer:
     elapsed_ms: float = 0
 
     def to_dict(self):
+        """Converte o resultado e suas fontes para o contrato usado pela interface e API."""
         return asdict(self)
 
 
 def guard_question(question):
+    """Reconhece alguns pedidos incompatíveis com o atendimento documental.
+
+    Args:
+        question: Pergunta original, usada também nas expressões regulares.
+
+    Returns:
+        Orientação textual para dados pessoais, tentativas explícitas de
+        alterar instruções ou consulta de pedido individual; None nos demais casos.
+
+    As regras são heurísticas limitadas, não um detector universal de dados
+    pessoais ou injeção de prompt. Elas são aplicadas antes da recuperação.
+    """
     plain = normalize(question)
     if re.search(r"\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b|\b(?:\d[ -]?){13,19}\b", question):
         return "Não envie CPF, número de cartão ou outros dados pessoais no chat. Posso ajudar com dúvidas gerais sobre os documentos."
@@ -54,6 +69,28 @@ def guard_question(question):
 
 
 def answer_question(question, index: KnowledgeIndex, mode="extractive", client=None, model=None):
+    """Consulta o índice e produz trechos locais ou síntese com referências validadas.
+
+    Args:
+        question: Pergunta com conteúdo e até 1.500 caracteres após strip.
+        index: KnowledgeIndex da biblioteca escolhida para esta consulta.
+        mode: extractive reproduz trechos; generative usa o provedor externo.
+        client: Cliente compatível com responses.create, inclusive cliente de teste.
+        model: Modelo explícito ou, se ausente, OPENAI_MODEL.
+
+    Returns:
+        Answer com status needs_human, not_found, evidence_found ou answered.
+        O resultado inclui as fontes aplicáveis e a duração da operação.
+
+    Raises:
+        ValueError: Pergunta, modo ou configuração do provedor inválidos.
+        ProviderError: A chamada generativa falha ou sua saída não atende ao contrato.
+
+    No modo externo, envia apenas a pergunta e trechos recuperados com origem.
+    A autorização do envio cabe à interface/API chamadora. Sem evidências ou
+    diante de encaminhamento, retorna antes de chamar o provedor. A validação
+    das referências não comprova o suporte semântico de todas as afirmações.
+    """
     started = perf_counter()
     question = question.strip()
     if not question or len(question) > 1500:
@@ -62,6 +99,7 @@ def answer_question(question, index: KnowledgeIndex, mode="extractive", client=N
         raise ValueError("Modo de resposta inválido.")
 
     def result(status, message, sources=None):
+        """Monta o resultado usando o mesmo modo e relógio iniciados pela consulta."""
         return Answer(status, message, mode, sources or [], round((perf_counter() - started) * 1000, 2))
 
     guarded = guard_question(question)
@@ -99,6 +137,7 @@ def answer_question(question, index: KnowledgeIndex, mode="extractive", client=N
         provided = {source["reference"] for source in sources}
         cited = set(parsed["citations"])
         inline = set(re.findall(r"\[(F\d+)\]", parsed["answer"]))
+        # O texto e a lista estruturada precisam citar exatamente os mesmos IDs conhecidos.
         if not cited.issubset(provided) or inline != cited:
             raise ValueError("Referências inválidas")
         if parsed["answerable"] and not cited:

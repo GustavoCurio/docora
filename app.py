@@ -26,6 +26,7 @@ conversation, references = st.columns([2.15, 1], gap="large")
 
 @st.cache_resource
 def demo_index():
+    """Cria o índice demonstrativo compartilhado pelo cache de recursos do Streamlit."""
     return KnowledgeIndex(demo_chunks())
 
 with references:
@@ -74,6 +75,7 @@ with references:
         else:
             st.caption("Consulta local: respostas reproduzidas dos documentos, com referências.")
 
+# Trocar base ou modo inicia outro histórico para não apresentar fontes de um contexto anterior.
 context_key = sha256((mode + ("|".join(c.id for c in index.chunks) if index else "empty")).encode()).hexdigest()
 if st.session_state.get("context_key") != context_key:
     st.session_state["history"] = []

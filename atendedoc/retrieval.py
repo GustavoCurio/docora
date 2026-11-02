@@ -26,20 +26,29 @@ ALIASES = {
 
 
 def normalize(text):
+    """Normaliza caixa e remove marcas de acento para a comparação lexical."""
     return "".join(c for c in unicodedata.normalize("NFKD", text.casefold()) if not unicodedata.combining(c))
 
 
 def terms(text):
+    """Retorna termos únicos com ao menos dois caracteres, excluindo as stopwords configuradas."""
     return {token for token in re.findall(r"\b\w{2,}\b", normalize(text)) if token not in STOP_WORDS}
 
 
 def expanded_query(question):
+    """Acrescenta aliases explícitos do domínio à pergunta normalizada, preservando o texto base."""
     original = normalize(question)
     return original + " " + " ".join(ALIASES[token] for token in terms(question) if token in ALIASES)
 
 
 @dataclass(frozen=True)
 class Chunk:
+    """Trecho imutável com conteúdo e posição na fonte.
+
+    id identifica a combinação de conteúdo e origem; source guarda o nome do
+    arquivo. line_start/line_end usam posições de base um. Em PDF, page informa
+    a página e as linhas se referem ao texto extraído daquela página.
+    """
     id: str
     source: str
     title: str
@@ -50,16 +59,35 @@ class Chunk:
     page: int | None = None
 
     def to_dict(self):
+        """Retorna uma cópia dos campos do trecho em dicionário serializável."""
         return asdict(self)
 
 
 @dataclass(frozen=True)
 class Hit:
+    """Trecho recuperado com seu escore lexical; o escore não é confiança calibrada."""
     chunk: Chunk
     score: float
 
 
 def chunks_from_text(text, source, page=None):
+    """Segmenta texto por títulos e tamanho, preservando posição e identificação.
+
+    Args:
+        text: Texto já decodificado, com até MAX_CHARS caracteres.
+        source: Nome do documento usado na identificação dos trechos.
+        page: Página do PDF em base um, ou None para arquivos textuais.
+
+    Returns:
+        Lista de Chunk. Texto vazio ou blocos sem três termos úteis não
+        produzem trechos. Títulos Markdown de níveis 1–3 delimitam seções.
+
+    Raises:
+        ValueError: O texto excede o limite de caracteres.
+
+    Linhas longas são fragmentadas em partes de 900 caracteres e agregadas
+    com limiar de cerca de 1.000 caracteres, mantendo sua linha de origem.
+    """
     if len(text) > MAX_CHARS:
         raise ValueError("Documento com texto muito longo. Limite: 150.000 caracteres por arquivo.")
     if not text.strip():
@@ -68,6 +96,7 @@ def chunks_from_text(text, source, page=None):
     title, section = Path(source).stem, "Conteúdo"
 
     def flush():
+        """Emite o bloco acumulado quando há termos úteis e esvazia o buffer da seção."""
         if not buffer:
             return
         body = "\n".join(line for _, line in buffer).strip()
@@ -95,6 +124,22 @@ def chunks_from_text(text, source, page=None):
 
 
 def ingest_bytes(name, payload):
+    """Lê um documento em memória e converte seu texto em trechos rastreáveis.
+
+    Args:
+        name: Nome do arquivo; componentes de diretório são descartados.
+        payload: Bytes de Markdown/TXT em UTF-8 ou de PDF com texto selecionável.
+
+    Returns:
+        Lista de Chunk, com página para PDF e faixa de linhas para cada trecho.
+
+    Raises:
+        ValueError: Formato, tamanho ou codificação inválidos; PDF protegido,
+            com mais de 30 páginas, ilegível ou sem texto selecionável.
+
+    Limita o arquivo a 2 MiB e o texto extraído a 150.000 caracteres. Não
+    executa OCR, não grava uploads e não acessa o caminho recebido em name.
+    """
     filename = name.replace("\\", "/").split("/")[-1]
     extension = Path(filename).suffix.lower()
     if len(payload) > MAX_BYTES:
@@ -130,11 +175,28 @@ def ingest_bytes(name, payload):
 
 
 def demo_chunks():
+    """Lê os Markdown da demonstração em ordem de nome e retorna seus trechos."""
     return [chunk for path in sorted(BASE_DIR.glob("*.md")) for chunk in ingest_bytes(path.name, path.read_bytes())]
 
 
 class KnowledgeIndex:
+    """Índice em memória com ranking lexical de palavras e caracteres.
+
+    A base é deduplicada pelo ID do trecho e os vetorizadores aprendem apenas
+    o corpus recebido. Os escores medem relação lexical com a pergunta.
+    """
     def __init__(self, chunks):
+        """Prepara os dois vetorizadores e as matrizes TF-IDF da biblioteca.
+
+        Args:
+            chunks: Trechos a indexar; IDs repetidos conservam a última ocorrência.
+
+        Raises:
+            ValueError: A base fica vazia, supera 600 trechos/300.000 caracteres
+                ou não permite formar o vocabulário dos vetorizadores.
+
+        As matrizes permanecem nesta instância; nenhuma fonte é enviada à rede.
+        """
         unique = {chunk.id: chunk for chunk in chunks}
         self.chunks = list(unique.values())
         if not self.chunks:
@@ -148,14 +210,31 @@ class KnowledgeIndex:
         self.char_matrix = self.char.fit_transform(corpus)
 
     def search(self, question, top_k=3, min_score=0.14):
+        """Classifica trechos por relação lexical e filtra evidências pouco relacionadas.
+
+        Args:
+            question: Pergunta a normalizar e expandir com aliases do domínio.
+            top_k: Limite positivo de fontes pretendido; o padrão é três.
+            min_score: Corte aplicado à soma ponderada dos escores TF-IDF.
+
+        Returns:
+            Lista de Hit em ordem decrescente de escore, possivelmente vazia.
+            Combina palavras com peso 0,8 e caracteres com peso 0,2. Também exige
+            sobreposição não vazia e cobertura de 20% dos termos expandidos.
+
+        O corte padrão 0,14 é um critério da demonstração, não uma probabilidade
+        de resposta correta. Empates preservam a ordem dos trechos no índice.
+        """
         query = expanded_query(question)
         query_terms = terms(query)
         word_scores = (self.word_matrix @ self.word.transform([query]).T).toarray().ravel()
         char_scores = (self.char_matrix @ self.char.transform([query]).T).toarray().ravel()
+        # Caracteres ajudam em variações de escrita; palavras continuam dominando o ranking.
         scores = 0.8 * word_scores + 0.2 * char_scores
         hits = []
         for position in np.argsort(-scores, kind="stable"):
             chunk = self.chunks[int(position)]
+            # O escore isolado pode aproximar textos sem cobrir o assunto perguntado.
             overlap = query_terms & terms(chunk.section + " " + chunk.text)
             if float(scores[position]) >= min_score and overlap and len(overlap) / max(len(query_terms), 1) >= 0.2:
                 hits.append(Hit(chunk, round(float(scores[position]), 5)))
