@@ -131,3 +131,21 @@ def test_evaluation_default_output_uses_temporary_directory(monkeypatch, tmp_pat
     report = json.loads((tmp_path / "docora/evaluation.json").read_text("utf-8"))
     assert report["passed"] == report["total"] == 28
     assert (ROOT / "reports/evaluation.json").read_bytes() == original_report
+
+
+def test_hybrid_without_encoder_displays_fallback_and_answers(cloud_without_credentials):
+    app = start_app()
+    app.selectbox(key="retriever").set_value("hybrid").run()
+    assert not app.exception
+    assert any(item.value == "Busca ativa: TF-IDF" for item in app.caption)
+    assert any("Modelo local ausente" in item.value for item in app.caption)
+    app.button(key="Prazo de entrega").click().run()
+    assert not app.exception
+    assert any("3 a 5 dias úteis" in item.value for item in app.markdown)
+    app.selectbox(key="retriever").set_value("bm25").run()
+    assert not app.exception
+    assert any(item.value == "Busca ativa: BM25" for item in app.caption)
+    assert not app.session_state["history"]
+    app.button(key="Prazo de entrega").click().run()
+    assert any("3 a 5 dias úteis" in item.value for item in app.markdown)
+    cloud_without_credentials.assert_not_called()
