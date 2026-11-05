@@ -1,3 +1,8 @@
 -r requirements.txt
 pytest==9.1.1
+pytest-cov==7.1.0
+ruff==0.17.3
+mypy==1.20.2
 httpx==0.28.1
+scikit-learn-stubs==0.0.3
+scipy-stubs==1.18.1.1

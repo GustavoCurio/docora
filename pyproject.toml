@@ -1,0 +1,43 @@
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = '--strict-markers -m "not slow"'
+markers = [
+    "slow: integração optativa com modelos ONNX já presentes no cache local",
+    "model: integração com encoder ou cross-encoder real, sem download implícito",
+    "cloud: regressões da interface no Community Cloud com provedor simulado",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 120
+extend-exclude = ["OUT"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
+ignore = [
+    "E501",  # Mensagens, expressões regulares e dados documentais preservam o texto.
+    "RUF001", "RUF002", "RUF003",  # Pontuação e caracteres dos exemplos em português.
+]
+
+[tool.mypy]
+files = ["docora"]
+python_version = "3.12"
+disallow_untyped_defs = true
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+show_error_codes = true
+
+[[tool.mypy.overrides]]
+module = ["onnxruntime.*"]
+ignore_missing_imports = true  # Runtime nativo sem stubs nem marcador py.typed.
+
+[tool.coverage.run]
+source = ["docora"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+precision = 2

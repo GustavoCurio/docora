@@ -8,3 +8,9 @@ venv/
 !.env.example
 .streamlit/secrets.toml
 uploads/
+.ruff_cache/
+.mypy_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
