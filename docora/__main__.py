@@ -3,6 +3,7 @@ import argparse
 from datetime import datetime, timezone
 import json
 from pathlib import Path
+import tempfile
 
 from .assistant import answer_question
 from .retrieval import KnowledgeIndex, demo_chunks
@@ -54,7 +55,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
     assessment = sub.add_parser("evaluate")
-    assessment.add_argument("--output", type=Path, default=ROOT / "reports" / "evaluation.json")
+    assessment.add_argument("--output", type=Path, default=Path(tempfile.gettempdir()) / "docora" / "evaluation.json")
     ask = sub.add_parser("ask")
     ask.add_argument("question")
     args = parser.parse_args()

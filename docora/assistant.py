@@ -68,7 +68,7 @@ def guard_question(question):
     return None
 
 
-def answer_question(question, index: KnowledgeIndex, mode="extractive", client=None, model=None):
+def answer_question(question, index: KnowledgeIndex, mode="extractive", client=None, model=None, api_key=None):
     """Consulta o índice e produz trechos locais ou síntese com referências validadas.
 
     Args:
@@ -77,6 +77,7 @@ def answer_question(question, index: KnowledgeIndex, mode="extractive", client=N
         mode: extractive reproduz trechos; generative usa o provedor externo.
         client: Cliente compatível com responses.create, inclusive cliente de teste.
         model: Modelo explícito ou, se ausente, OPENAI_MODEL.
+        api_key: Chave explícita do servidor ou, se ausente, OPENAI_API_KEY.
 
     Returns:
         Answer com status needs_human, not_found, evidence_found ou answered.
@@ -117,10 +118,11 @@ def answer_question(question, index: KnowledgeIndex, mode="extractive", client=N
     if not selected_model:
         raise ValueError("Configure OPENAI_MODEL para ativar a síntese generativa.")
     if client is None:
-        if not os.environ.get("OPENAI_API_KEY"):
+        selected_key = api_key or os.environ.get("OPENAI_API_KEY")
+        if not selected_key:
             raise ValueError("Configure OPENAI_API_KEY no ambiente do servidor.")
         from openai import OpenAI
-        client = OpenAI(timeout=25.0, max_retries=1)
+        client = OpenAI(api_key=selected_key, timeout=25.0, max_retries=1)
     context = [{key: source[key] for key in ["reference", "source", "section", "text", "page"]} for source in sources]
     try:
         response = client.responses.create(

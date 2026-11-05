@@ -3,11 +3,36 @@ from hashlib import sha256
 import json
 import os
 from pathlib import Path
+import sys
+
+# Prioriza o pacote deste repositório no Streamlit Community Cloud.
+_REPO_ROOT = Path(__file__).resolve().parent
+if sys.path[:1] != [str(_REPO_ROOT)]:
+    sys.path.insert(0, str(_REPO_ROOT))
+
 import streamlit as st
+from streamlit.errors import StreamlitSecretNotFoundError
+
 from docora.assistant import ProviderError, answer_question
 from docora.retrieval import KnowledgeIndex, demo_chunks, ingest_bytes
 
-ROOT = Path(__file__).resolve().parent
+
+def server_setting(name):
+    """Lê o ambiente ou os segredos opcionais, inclusive quando não há arquivo."""
+    if value := os.environ.get(name):
+        return value
+    try:
+        return st.secrets.get(name, "")
+    except (FileNotFoundError, StreamlitSecretNotFoundError):
+        return ""
+
+
+def load_example():
+    """Seleciona a base demonstrativa sem recriar o índice ou apagar a conversa."""
+    st.session_state["collection"] = "Loja demonstrativa"
+    st.session_state["example_loaded"] = True
+
+
 st.set_page_config(page_title="Docora · Conversas com fontes", page_icon="💬", layout="wide")
 st.markdown("""<style>
 .stApp{background:#fcfaf7;color:#303044}.block-container{max-width:1450px;padding-top:4rem}
@@ -33,7 +58,10 @@ with references:
     sources_slot = st.container()
     with st.container(border=True):
         st.subheader("Sua biblioteca")
-        collection = st.radio("Documentos usados na consulta", ["Loja demonstrativa", "Meus documentos"])
+        collection = st.radio("Documentos usados na consulta", ["Loja demonstrativa", "Meus documentos"], key="collection")
+        st.button("Carregar exemplo", on_click=load_example, width="stretch")
+        if st.session_state.pop("example_loaded", False):
+            st.success("Exemplo carregado: Lume Casa. Escolha uma pergunta rápida ou escreva sua dúvida.")
         index = None
         if collection == "Loja demonstrativa":
             index = demo_index()
@@ -64,13 +92,17 @@ with references:
                     for chunk in (c for c in index.chunks if c.source == document):
                         with st.expander(chunk.section):
                             st.text(chunk.text)
-        mode_label = st.radio("Formato da resposta", ["Trechos dos documentos", "Síntese com IA"])
+        api_key = server_setting("OPENAI_API_KEY")
+        model = server_setting("OPENAI_MODEL")
+        mode_label = "Trechos dos documentos"
+        if api_key:
+            mode_label = st.radio("Formato da resposta", ["Trechos dos documentos", "Síntese com IA"])
         mode = "generative" if mode_label == "Síntese com IA" else "extractive"
-        configured = bool(os.environ.get("OPENAI_API_KEY") and os.environ.get("OPENAI_MODEL"))
+        configured = bool(api_key and model)
         approved = mode == "extractive"
         if mode == "generative":
             if not configured:
-                st.info("A síntese com IA precisa de OPENAI_API_KEY e OPENAI_MODEL no servidor. A consulta local está disponível.")
+                st.info("A síntese com IA está indisponível porque o modelo não foi configurado no servidor. A consulta aos trechos continua disponível.")
             approved = st.checkbox("Autorizar o envio da pergunta e dos trechos recuperados para a OpenAI. A chamada pode consumir créditos da API.")
         else:
             st.caption("Consulta local: respostas reproduzidas dos documentos, com referências.")
@@ -105,7 +137,10 @@ with conversation:
     if question and not disabled:
         try:
             with st.spinner("Consultando a biblioteca…"):
-                answer = answer_question(question, index, mode)
+                if mode == "generative":
+                    answer = answer_question(question, index, mode, model=model, api_key=api_key)
+                else:
+                    answer = answer_question(question, index, mode)
             history.append({"question": question, "answer": answer.to_dict()})
             st.session_state["history"] = history[-6:]
             st.rerun()
@@ -146,7 +181,7 @@ with references:
     with st.expander("Sobre esta consulta"):
         st.write("TF-IDF combina palavras e caracteres para recuperar até três fontes. O modo local reproduz os trechos; a síntese com IA redige uma resposta e valida seus identificadores de referência.")
         st.write("Perguntas sem evidência recebem uma mensagem de ausência de informação. O assistente não acessa pedidos individuais. PDFs digitalizados precisam de OCR antes do envio.")
-        report_path = ROOT / "reports/evaluation.json"
+        report_path = _REPO_ROOT / "reports/evaluation.json"
         if report_path.exists():
             report = json.loads(report_path.read_text("utf-8"))
             st.caption(f"Base demonstrativa: {report['total']} perguntas avaliadas · {report['pass_rate_pct']:.1f}% dos critérios atendidos. Avaliação local, sem medir um LLM externo.")

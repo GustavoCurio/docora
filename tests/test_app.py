@@ -24,9 +24,9 @@ def test_provider_configuration_and_empty_upload_base(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_MODEL", raising=False)
     app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60).run()
-    next(r for r in app.radio if r.label == "Formato da resposta").set_value("Síntese com IA").run()
     assert not app.exception
-    assert app.chat_input[0].disabled
+    assert not any(r.label == "Formato da resposta" for r in app.radio)
+    assert not app.chat_input[0].disabled
     next(r for r in app.radio if r.label == "Documentos usados na consulta").set_value("Meus documentos").run()
     assert not app.exception
     assert app.chat_input[0].disabled
