@@ -102,7 +102,7 @@ python -m pytest -q
 python -m docora evaluate --suite all --retriever tfidf --allow-failures
 python -m docora prepare-model
 python -m docora evaluate --suite all --retriever hybrid --allow-failures
-python -m pytest -q -m slow tests/test_real_embeddings.py
+python -m pytest -q -m "slow and model" tests/models/test_real_embeddings.py
 ```
 
 O original tem 28 casos e o held-out separado tem 38. Os relatórios preservam
@@ -114,5 +114,26 @@ O [protocolo e schema](../evals/README.md) detalham denominadores e tratamento d
 alternativas multisseção. O [README](../README.md#avaliação-e-testes) compara os
 três métodos com números reais. O CI usa encoders simulados, impede download e
 exclui `slow`; a integração optativa exige encoder real disponível no cache.
+
+## Contratos e qualidade de código
+
+`docora/contracts.py` descreve os campos dos trechos e das fontes com
+`TypedDict`, além dos protocolos de busca, encoder e cross-encoder injetáveis.
+A avaliação reutiliza seu ranking na resposta por meio do contrato de busca.
+Esses contratos permitem verificar o pacote com mypy sem carregar os runtimes
+ONNX nem exigir modelos nos testes. As conversões de tipo das matrizes esparsas
+e dos modelos opcionais descrevem os estados já estabelecidos pelo recuperador
+ativo; não acrescentam validações ou mudam os filtros de evidência.
+
+O `pyproject.toml` reúne pytest com marcadores estritos, Ruff em 120 colunas,
+mypy sobre `docora/` e cobertura de linhas e ramos. Os testes ficam separados
+por domínio, com fixtures e isolamento de credenciais/cache em
+`tests/conftest.py`. A suíte rápida mantém 103 testes ativos e dois optativos
+com os marcadores `slow` e `model`; a coleta completa contém 105 testes.
+A cobertura local medida em Python 3.12.16 é **90,41%**, com mínimo de **90,0%**.
+O CI verifica lint, formatação e tipos, executa a matriz 3.12/3.14 e publica
+`coverage.xml`, mantendo as avaliações TF-IDF e de fallback sem baixar modelos.
+Os comandos e as exceções de análise estão no
+[README — Qualidade de código](../README.md#qualidade-de-código).
 
 Referência para a integração: [documentação oficial de saídas estruturadas](https://developers.openai.com/api/docs/guides/structured-outputs).

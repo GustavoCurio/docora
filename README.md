@@ -195,7 +195,7 @@ atingir 100%. Consulte o [schema e as regras completas](evals/README.md).
 .venv/bin/python -m docora prepare-model
 .venv/bin/python -m docora evaluate --suite original --retriever hybrid
 .venv/bin/python -m docora evaluate --suite heldout --retriever hybrid --allow-failures --output /tmp/hybrid-heldout.json
-.venv/bin/python -m pytest -q -m slow tests/test_real_embeddings.py
+.venv/bin/python -m pytest -q -m "slow and model" tests/models/test_real_embeddings.py
 .venv/bin/python scripts/benchmark_retrieval.py --output /tmp/recursos-hibrido.json
 ```
 
@@ -217,6 +217,54 @@ O [CI](.github/workflows/tests.yml) mantém a matriz **Python 3.12/3.14**, cache
 pip, embeddings desativados e download bloqueado. Executa o original TF-IDF e
 mede também o fallback explícito nas duas suítes. Não exige aprovação de todos
 os casos do held-out nem baixa pesos em cada job.
+
+## Qualidade de código
+
+As configurações de pytest, Ruff, mypy e cobertura ficam no `pyproject.toml`.
+A coleta preserva **105 testes**: **103 passam na suíte rápida** e dois exigem
+modelos reais no cache. Os testes estão organizados em `tests/assistant/`,
+`tests/retrieval/`, `tests/extractive/`, `tests/interfaces/`, `tests/evaluation/`
+e `tests/models/`. O `tests/conftest.py` centraliza as fixtures, isola caches e
+credenciais e bloqueia a criação de clientes OpenAI reais.
+
+```bash
+.venv/bin/python -m pip install -r requirements-dev.txt
+.venv/bin/python -m pytest --collect-only -q -o addopts=
+.venv/bin/python -m pytest -q
+.venv/bin/ruff check .
+.venv/bin/ruff format --check .
+.venv/bin/mypy
+.venv/bin/python -m pytest --cov=docora --cov-branch --cov-report=term-missing --cov-report=xml -q
+```
+
+A cobertura conjunta de **linhas e ramos sobre `docora/` é 90,41%**, medida em
+Python 3.12.16 com a suíte rápida, sem modelos reais. O mínimo obrigatório
+(`fail_under`) é **90,0%**, com margem de 0,41 ponto percentual. O CI publica
+`coverage.xml` como artefato separado para Python 3.12 e 3.14. Caminhos de
+inferência com pesos reais continuam fora desta execução rápida; a cobertura
+não mede a qualidade das respostas generativas.
+
+O Ruff usa Python 3.12, **120 colunas** e as famílias de regras E, F, I, B, UP,
+SIM e RUF. Textos documentais, mensagens e expressões regulares podem exceder
+esse limite (`E501`); caracteres e pontuação em português preservam as exceções
+`RUF001`–`RUF003`. O `E402` é permitido apenas em `app.py`, que precisa priorizar
+o pacote local no início da execução no Cloud. Para formatar, execute
+`.venv/bin/ruff format .`.
+
+O mypy verifica os 13 módulos de `docora/`, exige anotações nas funções e
+verifica seus corpos, opcionais implícitos, conversões redundantes e supressões
+sem uso. `app.py`, scripts e testes ficam fora desse escopo de tipagem.
+`ignore_missing_imports` se limita a `onnxruntime` e `tokenizers`, distribuídos
+sem stubs nem `py.typed`; scikit-learn e SciPy usam stubs de desenvolvimento.
+Hugging Face Hub, NumPy, FastAPI, Pydantic e OpenAI são analisados com os tipos
+distribuídos pelas próprias bibliotecas. As ferramentas de qualidade permanecem
+em `requirements-dev.txt`; `requirements.txt` mantém somente o ambiente runtime.
+
+Os marcadores `slow`, `model` e `cloud` são registrados, e `--strict-markers`
+rejeita marcadores desconhecidos. A seleção padrão é `-m "not slow"`; os dois
+testes de modelos recebem tanto `slow` quanto `model`. Para executá-los com o
+cache já preparado, use `.venv/bin/python -m pytest -q -m "slow and model" tests/models/`.
+Os testes `cloud` usam provedor simulado e fazem parte da suíte rápida.
 
 ## Respostas por sentenças e reranking — itens 5 e 6
 
