@@ -1,4 +1,5 @@
 """Respostas extrativas e síntese generativa com validação de referências."""
+
 from dataclasses import asdict, dataclass, field
 import json
 import os
@@ -19,21 +20,27 @@ Você não tem acesso a contas, pagamentos ou pedidos e não realiza ações nes
 Responda de forma direta, com até 180 palavras. Não peça dados pessoais."""
 
 ANSWER_SCHEMA = {
-    "type": "object", "properties": {
-        "answer": {"type": "string"}, "answerable": {"type": "boolean"},
+    "type": "object",
+    "properties": {
+        "answer": {"type": "string"},
+        "answerable": {"type": "boolean"},
         "citations": {"type": "array", "items": {"type": "string"}},
-    }, "required": ["answer", "answerable", "citations"], "additionalProperties": False,
+    },
+    "required": ["answer", "answerable", "citations"],
+    "additionalProperties": False,
 }
 
 
 class ProviderError(RuntimeError):
     """Falha na chamada externa ou na validação de sua resposta estruturada."""
+
     pass
 
 
 @dataclass
 class Answer:
     """Resultado da consulta com status, mensagem, modo, fontes e duração em milissegundos."""
+
     status: str
     message: str
     mode: str
@@ -108,14 +115,22 @@ def answer_question(question, index: KnowledgeIndex, mode="extractive", client=N
         return result("needs_human", guarded)
     hits = index.search(question)
     if not hits:
-        return result("not_found", "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.")
-    sources = [{"reference": f"F{number}", "score": hit.score, **hit.chunk.to_dict()}
-               for number, hit in enumerate(hits, 1)]
+        return result(
+            "not_found",
+            "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
+        )
+    sources = [
+        {"reference": f"F{number}", "score": hit.score, **hit.chunk.to_dict()} for number, hit in enumerate(hits, 1)
+    ]
     if mode == "extractive":
         from .extractive import select_sentences
+
         selected = select_sentences(question, sources, embedder=getattr(index, "embedder", None))
         if not selected:
-            return result("not_found", "Não encontrei uma sentença adequada dentro do limite de resposta. Consulte os documentos ou o atendimento humano.")
+            return result(
+                "not_found",
+                "Não encontrei uma sentença adequada dentro do limite de resposta. Consulte os documentos ou o atendimento humano.",
+            )
         cited = {reference for _, reference in selected}
         message = "\n\n".join(f"{sentence} [{reference}]" for sentence, reference in selected)
         return result("evidence_found", message, [s for s in sources if s["reference"] in cited])
@@ -127,19 +142,28 @@ def answer_question(question, index: KnowledgeIndex, mode="extractive", client=N
         if not selected_key:
             raise ValueError("Configure OPENAI_API_KEY no ambiente do servidor.")
         from openai import OpenAI
+
         client = OpenAI(api_key=selected_key, timeout=25.0, max_retries=1)
     context = [{key: source[key] for key in ["reference", "source", "section", "text", "page"]} for source in sources]
     try:
         response = client.responses.create(
-            model=selected_model, store=False, max_output_tokens=1200,
+            model=selected_model,
+            store=False,
+            max_output_tokens=1200,
             instructions=SYSTEM_PROMPT,
-            text={"format": {"type": "json_schema", "name": "document_answer", "strict": True, "schema": ANSWER_SCHEMA}},
+            text={
+                "format": {"type": "json_schema", "name": "document_answer", "strict": True, "schema": ANSWER_SCHEMA}
+            },
             input=json.dumps({"question": question, "evidence": context}, ensure_ascii=False),
         )
         parsed = json.loads(response.output_text)
         if set(parsed) != {"answer", "answerable", "citations"} or type(parsed["answerable"]) is not bool:
             raise ValueError("Formato de resposta inválido")
-        if not isinstance(parsed["answer"], str) or not parsed["answer"].strip() or not isinstance(parsed["citations"], list):
+        if (
+            not isinstance(parsed["answer"], str)
+            or not parsed["answer"].strip()
+            or not isinstance(parsed["citations"], list)
+        ):
             raise ValueError("Resposta incompleta")
         provided = {source["reference"] for source in sources}
         cited = set(parsed["citations"])
@@ -150,7 +174,14 @@ def answer_question(question, index: KnowledgeIndex, mode="extractive", client=N
         if parsed["answerable"] and not cited:
             raise ValueError("Resposta sem fonte")
         if not parsed["answerable"]:
-            return result("not_found", "Os trechos recuperados não permitem responder com segurança. Consulte o atendimento humano.")
-        return result("answered", parsed["answer"].strip(), [source for source in sources if source["reference"] in cited])
+            return result(
+                "not_found",
+                "Os trechos recuperados não permitem responder com segurança. Consulte o atendimento humano.",
+            )
+        return result(
+            "answered", parsed["answer"].strip(), [source for source in sources if source["reference"] in cited]
+        )
     except Exception as error:
-        raise ProviderError("Não foi possível obter uma resposta generativa com referências válidas. Confira o provedor ou use a consulta aos trechos.") from error
+        raise ProviderError(
+            "Não foi possível obter uma resposta generativa com referências válidas. Confira o provedor ou use a consulta aos trechos."
+        ) from error

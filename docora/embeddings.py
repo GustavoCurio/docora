@@ -1,4 +1,5 @@
 """Encoder multilíngue ONNX quantizado, local e carregado sob demanda."""
+
 from functools import lru_cache
 import os
 from pathlib import Path
@@ -19,6 +20,7 @@ class LocalEmbedder:
     256 tokens, duas threads e arena desativada reduzem o pico no Cloud. O lock
     protege o tokenizador compartilhado por sessões do Streamlit.
     """
+
     def __init__(self, cache_dir, allow_download=False):
         os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
         from huggingface_hub import hf_hub_download
@@ -26,8 +28,13 @@ class LocalEmbedder:
         paths = {}
         for file in ("tokenizer.json", MODEL_FILE):
             paths[file] = hf_hub_download(
-                MODEL_REPO, file, revision=MODEL_REVISION, cache_dir=cache_dir,
-                local_files_only=not allow_download, token=False, etag_timeout=5,
+                MODEL_REPO,
+                file,
+                revision=MODEL_REVISION,
+                cache_dir=cache_dir,
+                local_files_only=not allow_download,
+                token=False,
+                etag_timeout=5,
             )
         # Cache ausente não precisa importar os runtimes nativos no cold start.
         import onnxruntime as ort
@@ -51,7 +58,7 @@ class LocalEmbedder:
         vectors = []
         with self.lock:
             for offset in range(0, len(texts), 4):
-                encoded = self.tokenizer.encode_batch([prefix + text for text in texts[offset:offset + 4]])
+                encoded = self.tokenizer.encode_batch([prefix + text for text in texts[offset : offset + 4]])
                 mask = np.asarray([item.attention_mask for item in encoded], dtype=np.int64)
                 inputs = {
                     "input_ids": np.asarray([item.ids for item in encoded], dtype=np.int64),

@@ -1,4 +1,5 @@
 """Cross-encoder mMARCO multilíngue em ONNX INT8, inteiramente local."""
+
 from functools import lru_cache
 import os
 from pathlib import Path
@@ -18,14 +19,23 @@ class LocalCrossEncoder:
     Tokenizer e sessão são compartilhados sob lock, com duas threads CPU,
     arena desativada e sem Torch, transformers ou código remoto do modelo.
     """
+
     def __init__(self, cache_dir, allow_download=False):
         os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
         from huggingface_hub import hf_hub_download
 
-        paths = {file: hf_hub_download(
-            MODEL_REPO, file, revision=MODEL_REVISION, cache_dir=cache_dir,
-            local_files_only=not allow_download, token=False, etag_timeout=5,
-        ) for file in ("tokenizer.json", MODEL_FILE)}
+        paths = {
+            file: hf_hub_download(
+                MODEL_REPO,
+                file,
+                revision=MODEL_REVISION,
+                cache_dir=cache_dir,
+                local_files_only=not allow_download,
+                token=False,
+                etag_timeout=5,
+            )
+            for file in ("tokenizer.json", MODEL_FILE)
+        }
         # Ausência do cache não importa os runtimes nativos.
         import onnxruntime as ort
         from tokenizers import Tokenizer
@@ -47,7 +57,7 @@ class LocalCrossEncoder:
         scores = []
         with self.lock:
             for offset in range(0, len(passages), 2):
-                batch = passages[offset:offset + 2]
+                batch = passages[offset : offset + 2]
                 encoded = self.tokenizer.encode_batch([(question, text) for text in batch])
                 inputs = {
                     "input_ids": np.asarray([item.ids for item in encoded], dtype=np.int64),

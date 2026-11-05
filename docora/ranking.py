@@ -1,4 +1,5 @@
 """BM25 e fusão por posição, sem dependências de modelos ou rede."""
+
 from collections import Counter
 import math
 
@@ -9,12 +10,15 @@ from .textnorm import tokenize
 
 class BM25:
     """BM25 Okapi com IDF positivo e parâmetros usuais k1=1,5 e b=0,75."""
+
     def __init__(self, corpus, k1=1.5, b=0.75):
         self.documents = [Counter(tokenize(text)) for text in corpus]
         self.lengths = np.asarray([sum(doc.values()) for doc in self.documents], dtype=np.float64)
         self.average_length = max(float(self.lengths.mean()) if len(self.lengths) else 1.0, 1.0)
         frequency = Counter(token for doc in self.documents for token in doc)
-        self.idf = {token: math.log(1 + (len(corpus) - count + 0.5) / (count + 0.5)) for token, count in frequency.items()}
+        self.idf = {
+            token: math.log(1 + (len(corpus) - count + 0.5) / (count + 0.5)) for token, count in frequency.items()
+        }
         self.k1, self.b = k1, b
 
     def scores(self, question):

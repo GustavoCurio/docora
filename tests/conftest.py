@@ -1,4 +1,5 @@
 """A suíte rápida não carrega modelos reais nem autoriza downloads."""
+
 import json
 from pathlib import Path
 from unittest.mock import Mock
@@ -32,10 +33,20 @@ def local_retrieval_by_default(monkeypatch):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_MODEL", raising=False)
     monkeypatch.setattr("openai.OpenAI", Mock(side_effect=AssertionError("Cliente externo não autorizado nos testes")))
-    for clear in (load_embedder.cache_clear, load_crossencoder.cache_clear, api_index.cache_clear, st.cache_resource.clear):
+    for clear in (
+        load_embedder.cache_clear,
+        load_crossencoder.cache_clear,
+        api_index.cache_clear,
+        st.cache_resource.clear,
+    ):
         clear()
     yield
-    for clear in (load_embedder.cache_clear, load_crossencoder.cache_clear, api_index.cache_clear, st.cache_resource.clear):
+    for clear in (
+        load_embedder.cache_clear,
+        load_crossencoder.cache_clear,
+        api_index.cache_clear,
+        st.cache_resource.clear,
+    ):
         clear()
 
 

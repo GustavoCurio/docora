@@ -1,4 +1,5 @@
 """Métricas locais de recuperação, abstenção e suporte lexical das respostas."""
+
 from datetime import datetime, timezone
 from hashlib import sha256
 import json
@@ -26,8 +27,9 @@ def answer_units(answer):
         if inline:
             units.append((inline[1], inline[2], True))
         else:
-            units.extend((sentence, current, False) for sentence in re.split(r"(?<=[.!?])\s+", block)
-                         if terms(sentence))
+            units.extend(
+                (sentence, current, False) for sentence in re.split(r"(?<=[.!?])\s+", block) if terms(sentence)
+            )
     return units
 
 
@@ -40,16 +42,23 @@ def answer_checks(answer, gold):
     units = answer_units(answer) if answer.status == "evidence_found" else []
     sources = {s["reference"]: s for s in answer.sources}
     compact = lambda text: " ".join(text.split())
-    exact = sum(ref in sources and compact(text) in compact(sources[ref]["text"])
-                for text, ref, _ in units)
+    exact = sum(ref in sources and compact(text) in compact(sources[ref]["text"]) for text, ref, _ in units)
     words = sum(len(text.split()) for text, _, _ in units)
-    cited_gold = any(ref in sources and any(sources[ref]["source"] == g["source"] and
-                     sources[ref]["section"] == g["section"] for g in gold) for _, ref, _ in units)
+    cited_gold = any(
+        ref in sources
+        and any(sources[ref]["source"] == g["source"] and sources[ref]["section"] == g["section"] for g in gold)
+        for _, ref, _ in units
+    )
     unique = len({compact(text).casefold() for text, _, _ in units}) == len(units)
-    return {"sentences": len(units), "words": words, "exact_source_sentences": exact,
-            "inline_cited_sentences": sum(inline and ref in sources for _, ref, inline in units),
-            "within_budget": len(units) <= 6 and words <= 120, "no_exact_duplicates": unique,
-            "gold_cited_in_body": cited_gold if gold else None}
+    return {
+        "sentences": len(units),
+        "words": words,
+        "exact_source_sentences": exact,
+        "inline_cited_sentences": sum(inline and ref in sources for _, ref, inline in units),
+        "within_budget": len(units) <= 6 and words <= 120,
+        "no_exact_duplicates": unique,
+        "gold_cited_in_body": cited_gold if gold else None,
+    }
 
 
 def expected_sources(case):
@@ -79,8 +88,7 @@ def faithfulness(answer):
         total += 1
         overlap = len(tokens & by_ref.get(reference, set())) / len(tokens)
         supported += int(reference in by_ref and overlap >= 0.8)
-    return {"supported_sentences": supported, "sentences": total,
-            "score": supported / total if total else None}
+    return {"supported_sentences": supported, "sentences": total, "score": supported / total if total else None}
 
 
 def evaluate(cases, index, suite="original"):
@@ -100,12 +108,17 @@ def evaluate(cases, index, suite="original"):
         # mesmo ranking. O reranker sempre recebe seu top-10 antes do corte.
         started = perf_counter()
         ranking = index.search(case["question"], top_k=5) if not guard_question(case["question"]) else []
-        answer = answer_question(case["question"], SimpleNamespace(search=lambda question: ranking[:3],
-                                  embedder=getattr(index, "embedder", None)))
+        answer = answer_question(
+            case["question"],
+            SimpleNamespace(search=lambda question: ranking[:3], embedder=getattr(index, "embedder", None)),
+        )
         answer.elapsed_ms = round((perf_counter() - started) * 1000, 2)
         gold = expected_sources(case)
-        ranks = [rank for rank, hit in enumerate(ranking, 1)
-                 if any(hit.chunk.source == item["source"] and hit.chunk.section == item["section"] for item in gold)]
+        ranks = [
+            rank
+            for rank, hit in enumerate(ranking, 1)
+            if any(hit.chunk.source == item["source"] and hit.chunk.section == item["section"] for item in gold)
+        ]
         first = min(ranks, default=None)
         if gold:
             answerable += 1
@@ -114,23 +127,36 @@ def evaluate(cases, index, suite="original"):
             reciprocal += 1 / first if first else 0
         source_ok = not gold or any(
             source["source"] == item["source"] and source["section"] == item["section"]
-            for source in answer.sources for item in gold)
+            for source in answer.sources
+            for item in gold
+        )
         support = faithfulness(answer)
         checks = answer_checks(answer, gold)
         supported += support["supported_sentences"]
         sentences += support["sentences"]
-        results.append({**case, "actual_status": answer.status,
-                        "retriever_active": getattr(index, "active_retriever", "tfidf"),
-                        "pass": answer.status == case["expected_status"] and source_ok,
-                        "first_relevant_rank": first,
-                        "retrieved_sections": [s["section"] for s in answer.sources],
-                        "ranking_at_5": [{"source": h.chunk.source, "section": h.chunk.section, "score": h.score} for h in ranking],
-                        "faithfulness": support, "answer_checks": checks,
-                        "answer_text": answer.message, "elapsed_ms": answer.elapsed_ms})
+        results.append(
+            {
+                **case,
+                "actual_status": answer.status,
+                "retriever_active": getattr(index, "active_retriever", "tfidf"),
+                "pass": answer.status == case["expected_status"] and source_ok,
+                "first_relevant_rank": first,
+                "retrieved_sections": [s["section"] for s in answer.sources],
+                "ranking_at_5": [
+                    {"source": h.chunk.source, "section": h.chunk.section, "score": h.score} for h in ranking
+                ],
+                "faithfulness": support,
+                "answer_checks": checks,
+                "answer_text": answer.message,
+                "elapsed_ms": answer.elapsed_ms,
+            }
+        )
     predicted_nf = sum(row["actual_status"] == "not_found" for row in results)
     correct_nf = sum(row["actual_status"] == row["expected_status"] == "not_found" for row in results)
     ood = sum(row["expected_status"] == "not_found" for row in results)
-    false_positive = sum(row["expected_status"] == "not_found" and row["actual_status"] == "evidence_found" for row in results)
+    false_positive = sum(
+        row["expected_status"] == "not_found" and row["actual_status"] == "evidence_found" for row in results
+    )
     passed = sum(row["pass"] for row in results)
 
     def percent(numerator, denominator):
@@ -140,14 +166,28 @@ def evaluate(cases, index, suite="original"):
     if getattr(index, "active_retriever", "tfidf") == "hybrid":
         from .embeddings import MODEL_REPO, MODEL_REVISION
         from .retrieval import HYBRID_MIN_COSINE, HYBRID_MAX_GAP
-        metadata = {"embedding_model": MODEL_REPO, "model_revision": MODEL_REVISION,
-                    "min_cosine": HYBRID_MIN_COSINE, "max_cosine_gap": HYBRID_MAX_GAP, "rrf_k": 60}
+
+        metadata = {
+            "embedding_model": MODEL_REPO,
+            "model_revision": MODEL_REVISION,
+            "min_cosine": HYBRID_MIN_COSINE,
+            "max_cosine_gap": HYBRID_MAX_GAP,
+            "rrf_k": 60,
+        }
     if getattr(index, "requested_reranker", "none") == "crossencoder":
         from .crossencoder import MODEL_REPO, MODEL_REVISION, MODEL_FILE
-        metadata.update(crossencoder_model=MODEL_REPO, crossencoder_revision=MODEL_REVISION,
-                        crossencoder_file=MODEL_FILE, rerank_top_n=10, max_pair_tokens=256)
+
+        metadata.update(
+            crossencoder_model=MODEL_REPO,
+            crossencoder_revision=MODEL_REVISION,
+            crossencoder_file=MODEL_FILE,
+            rerank_top_n=10,
+            max_pair_tokens=256,
+        )
     return {
-        "executed_utc": datetime.now(timezone.utc).isoformat(), "mode": "extractive", "suite": suite,
+        "executed_utc": datetime.now(timezone.utc).isoformat(),
+        "mode": "extractive",
+        "suite": suite,
         "retriever_requested": getattr(index, "requested_retriever", "tfidf"),
         "retriever_active": getattr(index, "active_retriever", "tfidf"),
         "fallback_reason": getattr(index, "fallback_reason", None),
@@ -157,23 +197,38 @@ def evaluate(cases, index, suite="original"):
         "retrieval_parameters": metadata,
         "index_build_ms": getattr(index, "build_ms", None),
         "cases_sha256": sha256(json.dumps(cases, ensure_ascii=False, sort_keys=True).encode()).hexdigest(),
-        "corpus_sha256": sha256(json.dumps([c.to_dict() for c in index.chunks], ensure_ascii=False, sort_keys=True).encode()).hexdigest(),
-        "total": len(cases), "answerable": answerable, "ood": ood,
-        "passed": passed, "pass_rate_pct": percent(passed, len(cases)),
+        "corpus_sha256": sha256(
+            json.dumps([c.to_dict() for c in index.chunks], ensure_ascii=False, sort_keys=True).encode()
+        ).hexdigest(),
+        "total": len(cases),
+        "answerable": answerable,
+        "ood": ood,
+        "passed": passed,
+        "pass_rate_pct": percent(passed, len(cases)),
         **{f"source_recall_at_{k}_pct": percent(recall[k], answerable) for k in recall},
         "mrr_at_5": round(reciprocal / answerable, 6) if answerable else None,
         "not_found_precision_pct": percent(correct_nf, predicted_nf),
-        "not_found_predicted": predicted_nf, "not_found_correct": correct_nf,
-        "ood_false_positive_rate_pct": percent(false_positive, ood), "ood_false_positives": false_positive,
-        "faithfulness_pct": percent(supported, sentences), "faithfulness_sentences": sentences,
+        "not_found_predicted": predicted_nf,
+        "not_found_correct": correct_nf,
+        "ood_false_positive_rate_pct": percent(false_positive, ood),
+        "ood_false_positives": false_positive,
+        "faithfulness_pct": percent(supported, sentences),
+        "faithfulness_sentences": sentences,
         "answer_checks": {
-            "inline_citation_pct": percent(sum(r["answer_checks"]["inline_cited_sentences"] for r in results), sentences),
+            "inline_citation_pct": percent(
+                sum(r["answer_checks"]["inline_cited_sentences"] for r in results), sentences
+            ),
             "exact_source_pct": percent(sum(r["answer_checks"]["exact_source_sentences"] for r in results), sentences),
-            "gold_cited_in_body_pct": percent(sum(r["answer_checks"]["gold_cited_in_body"] is True for r in results), answerable),
+            "gold_cited_in_body_pct": percent(
+                sum(r["answer_checks"]["gold_cited_in_body"] is True for r in results), answerable
+            ),
             "answers_within_budget": sum(r["answer_checks"]["within_budget"] for r in results),
             "answers_without_exact_duplicates": sum(r["answer_checks"]["no_exact_duplicates"] for r in results),
-            "mean_words_evidence": round(sum(r["answer_checks"]["words"] for r in results) /
-                                         max(sum(r["actual_status"] == "evidence_found" for r in results), 1), 2),
+            "mean_words_evidence": round(
+                sum(r["answer_checks"]["words"] for r in results)
+                / max(sum(r["actual_status"] == "evidence_found" for r in results), 1),
+                2,
+            ),
         },
         "scope": "Base fictícia Lume Casa; ranking após filtros; MRR limitado a cinco; suporte lexical não mede relevância nem implicação semântica.",
         "results": results,

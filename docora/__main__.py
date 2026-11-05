@@ -1,4 +1,5 @@
 """Avaliação reproduzível e consultas do Docora pelo terminal."""
+
 import argparse
 import json
 import os
@@ -24,25 +25,37 @@ def main():
     assessment = sub.add_parser("evaluate")
     assessment.add_argument("--output", type=Path, default=Path(tempfile.gettempdir()) / "docora" / "evaluation.json")
     assessment.add_argument("--suite", choices=["original", "heldout", "all"], default="original")
-    assessment.add_argument("--allow-failures", action="store_true", help="Grava medições incompletas sem encerrar com código 1.")
+    assessment.add_argument(
+        "--allow-failures", action="store_true", help="Grava medições incompletas sem encerrar com código 1."
+    )
     ask = sub.add_parser("ask")
     ask.add_argument("question")
     for command in (ask, assessment):
-        command.add_argument("--reranker", choices=["none", "rules", "crossencoder"], default=None,
-                             help="Padrão: DOCORA_RERANKER ou none; reordena até dez candidatos aceitos.")
-        command.add_argument("--retriever", choices=["tfidf", "bm25", "hybrid"], default=None,
-                             help="Padrão: DOCORA_RETRIEVER ou hybrid, com fallback TF-IDF.")
+        command.add_argument(
+            "--reranker",
+            choices=["none", "rules", "crossencoder"],
+            default=None,
+            help="Padrão: DOCORA_RERANKER ou none; reordena até dez candidatos aceitos.",
+        )
+        command.add_argument(
+            "--retriever",
+            choices=["tfidf", "bm25", "hybrid"],
+            default=None,
+            help="Padrão: DOCORA_RETRIEVER ou hybrid, com fallback TF-IDF.",
+        )
     sub.add_parser("prepare-model", help="Baixa o encoder público para o cache local; não faz chamadas à OpenAI.")
     sub.add_parser("prepare-reranker", help="Baixa o cross-encoder público para o cache local; inferência sem OpenAI.")
     args = parser.parse_args()
     if args.command == "prepare-reranker":
         from .crossencoder import load_crossencoder
+
         os.environ["DOCORA_ALLOW_MODEL_DOWNLOAD"] = "1"
         model, reason = load_crossencoder()
         print("Cross-encoder local pronto no cache." if model else reason)
         raise SystemExit(0 if model else 1)
     if args.command == "prepare-model":
         from .embeddings import load_embedder
+
         os.environ["DOCORA_ALLOW_MODEL_DOWNLOAD"] = "1"
         model, reason = load_embedder()
         print("Modelo local pronto no cache." if model else reason)
@@ -50,9 +63,14 @@ def main():
     index = KnowledgeIndex(demo_chunks(), retriever=args.retriever, reranker=args.reranker)
     if args.command == "ask":
         result = answer_question(args.question, index).to_dict()
-        result.update(retriever_requested=index.requested_retriever, retriever_active=index.active_retriever,
-                      fallback_reason=index.fallback_reason, reranker_requested=index.requested_reranker,
-                      reranker_active=index.active_reranker, reranker_fallback_reason=index.reranker_fallback_reason)
+        result.update(
+            retriever_requested=index.requested_retriever,
+            retriever_active=index.active_retriever,
+            fallback_reason=index.fallback_reason,
+            reranker_requested=index.requested_reranker,
+            reranker_active=index.active_reranker,
+            reranker_fallback_reason=index.reranker_fallback_reason,
+        )
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
         suites = ["original", "heldout"] if args.suite == "all" else [args.suite]
@@ -65,7 +83,9 @@ def main():
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
         for item in reports:
-            print(f"{item['suite']} · {item['retriever_active']} · reranker {item['reranker_active']}: {item['passed']}/{item['total']} critérios; R@1/3/5 {item['source_recall_at_1_pct']}/{item['source_recall_at_3_pct']}/{item['source_recall_at_5_pct']}; relatório em {args.output}")
+            print(
+                f"{item['suite']} · {item['retriever_active']} · reranker {item['reranker_active']}: {item['passed']}/{item['total']} critérios; R@1/3/5 {item['source_recall_at_1_pct']}/{item['source_recall_at_3_pct']}/{item['source_recall_at_5_pct']}; relatório em {args.output}"
+            )
         raise SystemExit(0 if args.allow_failures or all(r["passed"] == r["total"] for r in reports) else 1)
 
 

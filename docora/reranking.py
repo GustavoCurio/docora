@@ -1,4 +1,5 @@
 """Reranking de candidatos já aceitos, com regras sem modelo adicional."""
+
 from .retrieval import expanded_query, normalize, terms
 
 TOP_N = 10
@@ -18,9 +19,12 @@ def rules_rerank(question, hits):
     def score(item):
         rank, hit = item
         chunk = hit.chunk
-        return (0.5 / (rank + 1) + 0.3 * len(query & terms(chunk.section)) / denominator +
-                0.1 * len(query & terms(chunk.title)) / denominator +
-                0.2 * len(query & terms(chunk.text)) / denominator +
-                0.1 * (normalize(chunk.section) in plain))
+        return (
+            0.5 / (rank + 1)
+            + 0.3 * len(query & terms(chunk.section)) / denominator
+            + 0.1 * len(query & terms(chunk.title)) / denominator
+            + 0.2 * len(query & terms(chunk.text)) / denominator
+            + 0.1 * (normalize(chunk.section) in plain)
+        )
 
     return [hit for _, hit in sorted(enumerate(hits), key=lambda item: -score(item))]

@@ -1,4 +1,5 @@
 """Integração optativa: exige encoder já disponível no cache local."""
+
 import json
 from unittest.mock import Mock
 
@@ -45,7 +46,10 @@ def test_real_model_on_both_suites_and_streamlit_without_key(monkeypatch, tmp_pa
         assert any(c.value == "Busca ativa: Busca híbrida" for c in app.caption)
         app.chat_input[0].set_value(question).run()
         assert not app.exception
-        assert app.session_state["history"][-1]["answer"]["sources"][0]["section"] == "Regiões atendidas e prazo de entrega"
+        assert (
+            app.session_state["history"][-1]["answer"]["sources"][0]["section"]
+            == "Regiões atendidas e prazo de entrega"
+        )
         assert any("3 a 5 dias úteis" in m.value and "[F1]" in m.value for m in app.markdown)
         provider.assert_not_called()
     finally:

@@ -1,4 +1,5 @@
 """Ordenação e abstenção independentes da escala de escores do recuperador."""
+
 import pytest
 
 from docora.reranking import rules_rerank
@@ -6,8 +7,11 @@ from docora.retrieval import Hit, KnowledgeIndex, chunks_from_text, demo_chunks
 
 
 def test_rules_promote_heading_without_changing_evidence_or_scores():
-    chunks = chunks_from_text("## Diversos\nSaiba mais sobre políticas comerciais da loja.\n"
-                              "## Prazo de entrega\nAs encomendas chegam em cinco dias úteis.", "base.md")
+    chunks = chunks_from_text(
+        "## Diversos\nSaiba mais sobre políticas comerciais da loja.\n"
+        "## Prazo de entrega\nAs encomendas chegam em cinco dias úteis.",
+        "base.md",
+    )
     hits = [Hit(c, 0.2) for c in chunks]
     result = rules_rerank("prazo de entrega", hits)
     assert result[0].chunk.section == "Prazo de entrega"

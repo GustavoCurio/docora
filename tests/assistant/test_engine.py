@@ -8,12 +8,15 @@ import pytest
 from docora.assistant import ProviderError, answer_question
 from docora.retrieval import KnowledgeIndex, MAX_BYTES, chunks_from_text, ingest_bytes
 
+
 def test_reference_questions(reference_case, index):
     case = reference_case
     result = answer_question(case["question"], index)
     assert result.status == case["expected_status"]
     if case.get("source"):
-        assert any(source["source"] == case["source"] and source["section"] == case["section"] for source in result.sources)
+        assert any(
+            source["source"] == case["source"] and source["section"] == case["section"] for source in result.sources
+        )
         assert all(f"[{source['reference']}]" in result.message for source in result.sources)
     else:
         assert result.sources == []
@@ -30,7 +33,9 @@ def test_uploaded_text_preserves_source_section_and_lines():
 
 
 def test_documents_are_isolated_from_demo():
-    own = KnowledgeIndex(chunks_from_text("# Empresa\n## Expediente\nO expediente termina as 17h e comeca as 10h.", "empresa.txt"))
+    own = KnowledgeIndex(
+        chunks_from_text("# Empresa\n## Expediente\nO expediente termina as 17h e comeca as 10h.", "empresa.txt")
+    )
     assert answer_question("Qual o desconto no Pix?", own).status == "not_found"
     assert {chunk.source for chunk in own.chunks} == {"empresa.txt"}
 
@@ -54,11 +59,20 @@ def test_ingestion_limits_and_encoding():
 def pdf_with_text():
     from pypdf import PdfWriter
     from pypdf.generic import DecodedStreamObject, DictionaryObject, NameObject
+
     writer = PdfWriter()
     for text in ["Atendimento das 10h as 17h.", "Trocas em ate 20 dias corridos."]:
         page = writer.add_blank_page(width=595, height=842)
-        font = DictionaryObject({NameObject("/Type"): NameObject("/Font"), NameObject("/Subtype"): NameObject("/Type1"), NameObject("/BaseFont"): NameObject("/Helvetica")})
-        page[NameObject("/Resources")] = DictionaryObject({NameObject("/Font"): DictionaryObject({NameObject("/F1"): font})})
+        font = DictionaryObject(
+            {
+                NameObject("/Type"): NameObject("/Font"),
+                NameObject("/Subtype"): NameObject("/Type1"),
+                NameObject("/BaseFont"): NameObject("/Helvetica"),
+            }
+        )
+        page[NameObject("/Resources")] = DictionaryObject(
+            {NameObject("/Font"): DictionaryObject({NameObject("/F1"): font})}
+        )
         content = DecodedStreamObject()
         content.set_data(f"BT /F1 12 Tf 50 780 Td ({text}) Tj ET".encode("ascii"))
         page[NameObject("/Contents")] = writer._add_object(content)
@@ -77,6 +91,7 @@ def test_pdf_ingestion_tracks_real_page_numbers():
 
 def test_blank_pdf_is_not_silently_indexed():
     from pypdf import PdfWriter
+
     writer = PdfWriter()
     writer.add_blank_page(width=595, height=842)
     output = BytesIO()
@@ -86,12 +101,18 @@ def test_blank_pdf_is_not_silently_indexed():
 
 
 def fake_client(payload):
-    return SimpleNamespace(responses=SimpleNamespace(create=Mock(return_value=SimpleNamespace(output_text=json.dumps(payload)))))
+    return SimpleNamespace(
+        responses=SimpleNamespace(create=Mock(return_value=SimpleNamespace(output_text=json.dumps(payload))))
+    )
 
 
 def test_structured_generation_uses_only_retrieved_evidence(index):
-    client = fake_client({"answer": "O Pix tem 5% de desconto sobre produtos. [F1]", "answerable": True, "citations": ["F1"]})
-    answer = answer_question("Existe desconto no Pix?", index, mode="generative", client=client, model="modelo-de-teste")
+    client = fake_client(
+        {"answer": "O Pix tem 5% de desconto sobre produtos. [F1]", "answerable": True, "citations": ["F1"]}
+    )
+    answer = answer_question(
+        "Existe desconto no Pix?", index, mode="generative", client=client, model="modelo-de-teste"
+    )
     arguments = client.responses.create.call_args.kwargs
     assert answer.status == "answered"
     assert len(answer.sources) == 1
@@ -101,20 +122,27 @@ def test_structured_generation_uses_only_retrieved_evidence(index):
     assert "OPENAI_API_KEY" not in arguments["input"]
 
 
-@pytest.mark.parametrize("payload", [
-    {"answer": "Uma oferta inventada. [F99]", "answerable": True, "citations": ["F99"]},
-    {"answer": "Resposta sem fonte", "answerable": True, "citations": []},
-    {"answer": "Resposta. [F1]", "answerable": True, "citations": ["F2"]},
-    {"answer": "", "answerable": True, "citations": ["F1"]},
-])
+@pytest.mark.parametrize(
+    "payload",
+    [
+        {"answer": "Uma oferta inventada. [F99]", "answerable": True, "citations": ["F99"]},
+        {"answer": "Resposta sem fonte", "answerable": True, "citations": []},
+        {"answer": "Resposta. [F1]", "answerable": True, "citations": ["F2"]},
+        {"answer": "", "answerable": True, "citations": ["F1"]},
+    ],
+)
 def test_invalid_generated_citations_rejected(index, payload):
     with pytest.raises(ProviderError, match="referências válidas"):
-        answer_question("Desconto no Pix?", index, mode="generative", client=fake_client(payload), model="modelo-de-teste")
+        answer_question(
+            "Desconto no Pix?", index, mode="generative", client=fake_client(payload), model="modelo-de-teste"
+        )
 
 
 def test_guarded_question_never_reaches_provider(index):
     client = fake_client({})
-    answer = answer_question("Consulte o pedido 12345", index, mode="generative", client=client, model="modelo-de-teste")
+    answer = answer_question(
+        "Consulte o pedido 12345", index, mode="generative", client=client, model="modelo-de-teste"
+    )
     assert answer.status == "needs_human"
     client.responses.create.assert_not_called()
 

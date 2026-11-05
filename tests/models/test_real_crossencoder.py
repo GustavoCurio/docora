@@ -1,4 +1,5 @@
 """Integração optativa ONNX; exige ambos os modelos já presentes no cache."""
+
 import json
 
 import pytest

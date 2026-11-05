@@ -56,16 +56,26 @@ def test_optional_generation_receives_server_settings_and_requires_consent(monke
         monkeypatch.setenv("OPENAI_API_KEY", "chave-ficticia-ambiente")
         monkeypatch.setenv("OPENAI_MODEL", "modelo-ficticio-ambiente")
     if configuration in {"segredos", "ambiente_prioritario"}:
-        monkeypatch.setattr(st, "secrets", {
-            "OPENAI_API_KEY": "chave-ficticia-segredos",
-            "OPENAI_MODEL": "modelo-ficticio-segredos",
-        })
+        monkeypatch.setattr(
+            st,
+            "secrets",
+            {
+                "OPENAI_API_KEY": "chave-ficticia-segredos",
+                "OPENAI_MODEL": "modelo-ficticio-segredos",
+            },
+        )
     expected = "segredos" if configuration == "segredos" else "ambiente"
-    create = Mock(return_value=SimpleNamespace(output_text=json.dumps({
-        "answer": "O prazo é de 3 a 5 dias úteis. [F1]",
-        "answerable": True,
-        "citations": ["F1"],
-    })))
+    create = Mock(
+        return_value=SimpleNamespace(
+            output_text=json.dumps(
+                {
+                    "answer": "O prazo é de 3 a 5 dias úteis. [F1]",
+                    "answerable": True,
+                    "citations": ["F1"],
+                }
+            )
+        )
+    )
     factory = Mock(return_value=SimpleNamespace(responses=SimpleNamespace(create=create)))
     monkeypatch.setattr("openai.OpenAI", factory)
     app = start_app()
@@ -87,7 +97,9 @@ def test_optional_generation_receives_server_settings_and_requires_consent(monke
     assert create.call_args.kwargs["store"] is False
 
 
-def test_key_without_model_keeps_extractive_default_and_blocks_generation(monkeypatch, cloud_without_credentials, start_app):
+def test_key_without_model_keeps_extractive_default_and_blocks_generation(
+    monkeypatch, cloud_without_credentials, start_app
+):
     monkeypatch.setenv("OPENAI_API_KEY", "chave-ficticia")
     app = start_app()
     assert not app.exception

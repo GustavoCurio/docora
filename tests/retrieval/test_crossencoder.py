@@ -1,4 +1,5 @@
 """Cross-encoder: apenas mocks na suíte rápida, sem pesos nem rede."""
+
 from types import SimpleNamespace
 from unittest.mock import Mock
 import sys
@@ -45,7 +46,9 @@ def test_disabled_and_default_modes_never_load_model(monkeypatch):
 
 
 def test_only_top_ten_eligible_pairs_are_scored_and_prefix_is_stable(monkeypatch):
-    chunks = chunks_from_text("\n".join(f"## Seção {i}\nA entrega da loja tem prazo de {i} dias." for i in range(12)), "base.md")
+    chunks = chunks_from_text(
+        "\n".join(f"## Seção {i}\nA entrega da loja tem prazo de {i} dias." for i in range(12)), "base.md"
+    )
     model = SimpleNamespace(predict=Mock(return_value=list(range(10))))
     index = KnowledgeIndex(chunks, reranker="crossencoder", crossencoder=model)
     hits = [Hit(c, 1) for c in chunks]
@@ -94,10 +97,15 @@ def test_onnx_adapter_uses_pairs_masks_batches_and_no_torch(monkeypatch, tmp_pat
     session = Mock()
     session.get_inputs.return_value = [SimpleNamespace(name=n) for n in ["input_ids", "attention_mask"]]
     session.run.side_effect = lambda _, inputs: [np.ones((len(inputs["input_ids"]), 1), dtype=np.float32)]
-    runtime = SimpleNamespace(SessionOptions=Mock(), InferenceSession=Mock(return_value=session),
-                              GraphOptimizationLevel=SimpleNamespace(ORT_ENABLE_BASIC=1))
+    runtime = SimpleNamespace(
+        SessionOptions=Mock(),
+        InferenceSession=Mock(return_value=session),
+        GraphOptimizationLevel=SimpleNamespace(ORT_ENABLE_BASIC=1),
+    )
     monkeypatch.setitem(sys.modules, "huggingface_hub", SimpleNamespace(hf_hub_download=downloader))
-    monkeypatch.setitem(sys.modules, "tokenizers", SimpleNamespace(Tokenizer=SimpleNamespace(from_file=Mock(return_value=tokenizer))))
+    monkeypatch.setitem(
+        sys.modules, "tokenizers", SimpleNamespace(Tokenizer=SimpleNamespace(from_file=Mock(return_value=tokenizer)))
+    )
     monkeypatch.setitem(sys.modules, "onnxruntime", runtime)
     model = ce.LocalCrossEncoder(tmp_path)
     assert model.predict("pergunta", ["um", "dois", "três"]) == [1, 1, 1]

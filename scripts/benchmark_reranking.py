@@ -1,4 +1,5 @@
 """Mede recursos e latência do reranking em processo Linux, sem OpenAI."""
+
 import argparse
 from datetime import datetime, timezone
 import json
@@ -31,8 +32,10 @@ def main():
     if args.repeat < 1:
         parser.error("--repeat deve ser positivo")
     cache = Path(os.environ.get("DOCORA_MODEL_CACHE", "/tmp/docora-models"))
-    preexisting = {"e5": any(cache.glob("models--Xenova--multilingual-e5-small/snapshots/*/onnx/*.onnx")),
-                   "crossencoder": any(cache.glob("models--cross-encoder--mmarco*/snapshots/*/onnx/*.onnx"))}
+    preexisting = {
+        "e5": any(cache.glob("models--Xenova--multilingual-e5-small/snapshots/*/onnx/*.onnx")),
+        "crossencoder": any(cache.glob("models--cross-encoder--mmarco*/snapshots/*/onnx/*.onnx")),
+    }
     started = perf_counter()
     from docora.assistant import answer_question, guard_question
     from docora.retrieval import KnowledgeIndex, demo_chunks
@@ -52,9 +55,15 @@ def main():
 
     import streamlit as st
     from streamlit.testing.v1 import AppTest
+
     provider = Mock(side_effect=AssertionError("Chamada à OpenAI proibida"))
-    with patch.dict(os.environ, {"OPENAI_API_KEY": "", "OPENAI_MODEL": "", "DOCORA_RETRIEVER": "hybrid",
-                                 "DOCORA_RERANKER": args.reranker}), patch("openai.OpenAI", provider):
+    with (
+        patch.dict(
+            os.environ,
+            {"OPENAI_API_KEY": "", "OPENAI_MODEL": "", "DOCORA_RETRIEVER": "hybrid", "DOCORA_RERANKER": args.reranker},
+        ),
+        patch("openai.OpenAI", provider),
+    ):
         st.cache_resource.clear()
         ui_started = perf_counter()
         app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=120).run()
@@ -78,14 +87,22 @@ def main():
             search_ms = (perf_counter() - now) * 1000
             rerank_ms = index.last_rerank_ms
             response = answer_question(case["question"], index)
-            rows.append({"repeat": repeat, "id": case["id"], "candidates_returned": len(hits),
-                         "search_ms": round(search_ms, 3), "rerank_ms": rerank_ms,
-                         "answer_ms": response.elapsed_ms})
+            rows.append(
+                {
+                    "repeat": repeat,
+                    "id": case["id"],
+                    "candidates_returned": len(hits),
+                    "search_ms": round(search_ms, 3),
+                    "rerank_ms": rerank_ms,
+                    "answer_ms": response.elapsed_ms,
+                }
+            )
     searches = [r["search_ms"] for r in rows]
     reranks = [r["rerank_ms"] for r in rows if r["candidates_returned"]]
     # Exercita dez pares mesmo quando os filtros da demo retornam menos.
     from docora.reranking import rules_rerank
     from docora.retrieval import Hit
+
     top10_times = []
     for _ in range(3):
         now = perf_counter()
@@ -96,25 +113,34 @@ def main():
         top10_times.append((perf_counter() - now) * 1000)
     files = list(cache.glob("models--cross-encoder--mmarco*/snapshots/*/onnx/*.onnx"))
     report = {
-        "executed_utc": datetime.now(timezone.utc).isoformat(), "python": platform.python_version(),
-        "platform": platform.platform(), "retriever": index.active_retriever, "reranker": index.active_reranker,
+        "executed_utc": datetime.now(timezone.utc).isoformat(),
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "retriever": index.active_retriever,
+        "reranker": index.active_reranker,
         "model": MODEL_REPO if args.reranker == "crossencoder" else None,
         "revision": MODEL_REVISION if args.reranker == "crossencoder" else None,
         "model_file": MODEL_FILE if args.reranker == "crossencoder" else None,
         "model_bytes": files[0].stat().st_size if files and args.reranker == "crossencoder" else 0,
-        "cache_preexisting": preexisting, "download_allowed": os.environ.get("DOCORA_ALLOW_MODEL_DOWNLOAD") == "1",
-        "index_build_ms": index.build_ms, "cold_process_first_answer_ms": round(first_answer_ms, 2),
+        "cache_preexisting": preexisting,
+        "download_allowed": os.environ.get("DOCORA_ALLOW_MODEL_DOWNLOAD") == "1",
+        "index_build_ms": index.build_ms,
+        "cold_process_first_answer_ms": round(first_answer_ms, 2),
         "streamlit_first_answer_cached_model_ms": round(ui_first_answer_ms, 2),
-        "rss_after_index_mib": rss_index, "rss_including_streamlit_mib": rss_ui,
+        "rss_after_index_mib": rss_index,
+        "rss_including_streamlit_mib": rss_ui,
         "peak_rss_including_streamlit_mib": round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 1024, 2),
-        "search_mean_ms": round(float(np.mean(searches)), 3), "search_p50_ms": round(float(np.median(searches)), 3),
+        "search_mean_ms": round(float(np.mean(searches)), 3),
+        "search_p50_ms": round(float(np.median(searches)), 3),
         "search_p95_ms": round(float(np.percentile(searches, 95)), 3),
         "answer_mean_ms": round(float(np.mean([r["answer_ms"] for r in rows])), 3),
         "answer_p95_ms": round(float(np.percentile([r["answer_ms"] for r in rows], 95)), 3),
         "rerank_nonempty_mean_ms": round(float(np.mean(reranks)), 3),
         "rerank_nonempty_p95_ms": round(float(np.percentile(reranks, 95)), 3),
         "ten_pairs_rerank_mean_ms": round(float(np.mean(top10_times)), 3),
-        "queries": len(rows), "openai_calls": provider.call_count, "measurements": rows,
+        "queries": len(rows),
+        "openai_calls": provider.call_count,
+        "measurements": rows,
         "scope": "CPU Linux local, processos novos por opção; inclui E5, Streamlit AppTest e dois índices compartilhando modelos. Latência de busca inclui OOD sem guardrails; rerank só candidatos aceitos (até dez). Não mede Cloud nem concorrência.",
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -10,7 +10,11 @@ from docora.retrieval import KnowledgeIndex, chunks_from_text, demo_chunks
 
 
 def test_bm25_normalizes_portuguese_and_ranks_relevant_document():
-    corpus = ["Pagamento por Pix dá desconto no valor.", "A entrega leva cinco dias úteis.", "Atendimento em horário comercial."]
+    corpus = [
+        "Pagamento por Pix dá desconto no valor.",
+        "A entrega leva cinco dias úteis.",
+        "Atendimento em horário comercial.",
+    ]
     bm25 = BM25(corpus)
     scores = bm25.scores("PAGAMENTO por pix")
     assert scores[0] > 0
@@ -35,7 +39,10 @@ def test_lexical_retrievers_do_not_load_encoder(retriever, monkeypatch):
     loader = Mock(side_effect=AssertionError("Não carregar modelo neste caminho"))
     monkeypatch.setattr(embeddings, "load_embedder", loader)
     index = KnowledgeIndex(demo_chunks(), retriever=retriever)
-    assert answer_question("Prazo de entrega para São Paulo?", index).sources[0]["section"] == "Regiões atendidas e prazo de entrega"
+    assert (
+        answer_question("Prazo de entrega para São Paulo?", index).sources[0]["section"]
+        == "Regiões atendidas e prazo de entrega"
+    )
     assert answer_question("Como compilar o kernel Linux?", index).status == "not_found"
     loader.assert_not_called()
 
@@ -86,7 +93,10 @@ def test_corpus_and_query_encoding_failures_preserve_demo(exception, stage):
 
 
 def tiny_index(cosines):
-    chunks = chunks_from_text("## Prazo\nEntrega em cinco dias úteis.\n## Pix\nDesconto de cinco por cento no Pix.\n## Suporte\nAtendimento humano em horário comercial.", "base.md")
+    chunks = chunks_from_text(
+        "## Prazo\nEntrega em cinco dias úteis.\n## Pix\nDesconto de cinco por cento no Pix.\n## Suporte\nAtendimento humano em horário comercial.",
+        "base.md",
+    )
     model = Mock()
     model.encode.side_effect = [np.array([[c, np.sqrt(1 - c * c)] for c in cosines]), np.array([[1, 0]])]
     return KnowledgeIndex(chunks, retriever="hybrid", embedder=model)

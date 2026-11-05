@@ -16,6 +16,7 @@ def test_demo_question_and_source_evidence(monkeypatch, start_app):
     assert not app.exception
     assert len(app.chat_message) == 0
 
+
 def test_provider_configuration_and_empty_upload_base(monkeypatch, start_app):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_MODEL", raising=False)
