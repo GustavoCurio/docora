@@ -3,8 +3,10 @@ from datetime import datetime, timezone
 from hashlib import sha256
 import json
 import re
+from time import perf_counter
+from types import SimpleNamespace
 
-from .assistant import answer_question
+from .assistant import answer_question, guard_question
 from .retrieval import terms
 
 
@@ -94,8 +96,13 @@ def evaluate(cases, index, suite="original"):
     recall = {k: 0 for k in (1, 3, 5)}
     answerable = reciprocal = supported = sentences = 0
     for case in cases:
-        answer = answer_question(case["question"], index)
-        ranking = index.search(case["question"], top_k=5) if answer.status != "needs_human" else []
+        # Uma única inferência por pergunta: resposta e métricas observam o
+        # mesmo ranking. O reranker sempre recebe seu top-10 antes do corte.
+        started = perf_counter()
+        ranking = index.search(case["question"], top_k=5) if not guard_question(case["question"]) else []
+        answer = answer_question(case["question"], SimpleNamespace(search=lambda question: ranking[:3],
+                                  embedder=getattr(index, "embedder", None)))
+        answer.elapsed_ms = round((perf_counter() - started) * 1000, 2)
         gold = expected_sources(case)
         ranks = [rank for rank, hit in enumerate(ranking, 1)
                  if any(hit.chunk.source == item["source"] and hit.chunk.section == item["section"] for item in gold)]
@@ -135,6 +142,10 @@ def evaluate(cases, index, suite="original"):
         from .retrieval import HYBRID_MIN_COSINE, HYBRID_MAX_GAP
         metadata = {"embedding_model": MODEL_REPO, "model_revision": MODEL_REVISION,
                     "min_cosine": HYBRID_MIN_COSINE, "max_cosine_gap": HYBRID_MAX_GAP, "rrf_k": 60}
+    if getattr(index, "requested_reranker", "none") == "crossencoder":
+        from .crossencoder import MODEL_REPO, MODEL_REVISION, MODEL_FILE
+        metadata.update(crossencoder_model=MODEL_REPO, crossencoder_revision=MODEL_REVISION,
+                        crossencoder_file=MODEL_FILE, rerank_top_n=10, max_pair_tokens=256)
     return {
         "executed_utc": datetime.now(timezone.utc).isoformat(), "mode": "extractive", "suite": suite,
         "retriever_requested": getattr(index, "requested_retriever", "tfidf"),

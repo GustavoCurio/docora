@@ -40,3 +40,21 @@ def test_faithfulness_measures_message_against_its_cited_chunk():
 def test_empty_suite_is_rejected():
     with pytest.raises(ValueError, match="conjunto"):
         evaluate([], None)
+
+
+def test_inline_citation_cannot_support_a_sentence_from_another_source():
+    sources = [{"reference": "F1", "text": "Entrega em cinco dias úteis."},
+               {"reference": "F2", "text": "Pagamento em três parcelas."}]
+    answer = Answer("evidence_found", "Entrega em cinco dias úteis. [F2]\n\nPagamento em três parcelas. [F2]", "extractive", sources)
+    assert faithfulness(answer)["score"] == 0.5
+
+
+def test_evaluation_reuses_one_ranking_for_answer_and_metrics():
+    from unittest.mock import Mock
+    chunks = chunks_from_text("## Prazo\nEntrega em cinco dias úteis.", "base.md")
+    search = Mock(return_value=[Hit(chunks[0], 1)])
+    index = SimpleNamespace(chunks=chunks, search=search)
+    report = evaluate([{"question": "entrega", "expected_status": "evidence_found", "source": "base.md", "section": "Prazo"}], index)
+    search.assert_called_once_with("entrega", top_k=5)
+    assert report["passed"] == 1
+    assert report["answer_checks"]["gold_cited_in_body_pct"] == 100

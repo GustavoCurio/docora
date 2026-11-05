@@ -1,0 +1,875 @@
+{
+  "executed_utc": "2026-11-05T10:31:23.763038+00:00",
+  "python": "3.12.16",
+  "platform": "Linux-6.12.94+-x86_64-with-glibc2.41",
+  "retriever": "hybrid",
+  "reranker": "rules",
+  "model": null,
+  "revision": null,
+  "model_file": null,
+  "model_bytes": 0,
+  "cache_preexisting": {
+    "e5": true,
+    "crossencoder": true
+  },
+  "download_allowed": false,
+  "index_build_ms": 1128.39,
+  "cold_process_first_answer_ms": 2069.36,
+  "streamlit_first_answer_cached_model_ms": 437.8,
+  "rss_after_index_mib": 639.87,
+  "rss_including_streamlit_mib": 697.65,
+  "peak_rss_including_streamlit_mib": 713.62,
+  "search_mean_ms": 2.999,
+  "search_p50_ms": 2.966,
+  "search_p95_ms": 3.63,
+  "answer_mean_ms": 13.367,
+  "answer_p95_ms": 35.114,
+  "rerank_nonempty_mean_ms": 0.081,
+  "rerank_nonempty_p95_ms": 0.118,
+  "ten_pairs_rerank_mean_ms": 0.3,
+  "queries": 105,
+  "openai_calls": 0,
+  "measurements": [
+    {
+      "repeat": 0,
+      "id": "h01",
+      "candidates_returned": 2,
+      "search_ms": 3.246,
+      "rerank_ms": 0.113,
+      "answer_ms": 35.16
+    },
+    {
+      "repeat": 0,
+      "id": "h02",
+      "candidates_returned": 0,
+      "search_ms": 3.381,
+      "rerank_ms": 0,
+      "answer_ms": 2.66
+    },
+    {
+      "repeat": 0,
+      "id": "h03",
+      "candidates_returned": 1,
+      "search_ms": 4.045,
+      "rerank_ms": 0.074,
+      "answer_ms": 20.41
+    },
+    {
+      "repeat": 0,
+      "id": "h04",
+      "candidates_returned": 2,
+      "search_ms": 4.392,
+      "rerank_ms": 0.099,
+      "answer_ms": 30.03
+    },
+    {
+      "repeat": 0,
+      "id": "h05",
+      "candidates_returned": 2,
+      "search_ms": 3.553,
+      "rerank_ms": 0.11,
+      "answer_ms": 33.99
+    },
+    {
+      "repeat": 0,
+      "id": "h06",
+      "candidates_returned": 1,
+      "search_ms": 3.301,
+      "rerank_ms": 0.085,
+      "answer_ms": 19.9
+    },
+    {
+      "repeat": 0,
+      "id": "h07",
+      "candidates_returned": 3,
+      "search_ms": 3.145,
+      "rerank_ms": 0.128,
+      "answer_ms": 37.14
+    },
+    {
+      "repeat": 0,
+      "id": "h08",
+      "candidates_returned": 2,
+      "search_ms": 3.377,
+      "rerank_ms": 0.094,
+      "answer_ms": 26.24
+    },
+    {
+      "repeat": 0,
+      "id": "h09",
+      "candidates_returned": 1,
+      "search_ms": 2.881,
+      "rerank_ms": 0.062,
+      "answer_ms": 15.06
+    },
+    {
+      "repeat": 0,
+      "id": "h10",
+      "candidates_returned": 0,
+      "search_ms": 3.256,
+      "rerank_ms": 0,
+      "answer_ms": 3.12
+    },
+    {
+      "repeat": 0,
+      "id": "h11",
+      "candidates_returned": 0,
+      "search_ms": 3.471,
+      "rerank_ms": 0,
+      "answer_ms": 3.15
+    },
+    {
+      "repeat": 0,
+      "id": "h12",
+      "candidates_returned": 0,
+      "search_ms": 3.504,
+      "rerank_ms": 0,
+      "answer_ms": 3.29
+    },
+    {
+      "repeat": 0,
+      "id": "h13",
+      "candidates_returned": 1,
+      "search_ms": 3.215,
+      "rerank_ms": 0.062,
+      "answer_ms": 15.75
+    },
+    {
+      "repeat": 0,
+      "id": "h14",
+      "candidates_returned": 1,
+      "search_ms": 2.804,
+      "rerank_ms": 0.061,
+      "answer_ms": 16.51
+    },
+    {
+      "repeat": 0,
+      "id": "h15",
+      "candidates_returned": 1,
+      "search_ms": 3.434,
+      "rerank_ms": 0.062,
+      "answer_ms": 17.21
+    },
+    {
+      "repeat": 0,
+      "id": "h16",
+      "candidates_returned": 1,
+      "search_ms": 2.9,
+      "rerank_ms": 0.057,
+      "answer_ms": 16.69
+    },
+    {
+      "repeat": 0,
+      "id": "h17",
+      "candidates_returned": 1,
+      "search_ms": 2.986,
+      "rerank_ms": 0.056,
+      "answer_ms": 18.76
+    },
+    {
+      "repeat": 0,
+      "id": "h18",
+      "candidates_returned": 0,
+      "search_ms": 3.086,
+      "rerank_ms": 0,
+      "answer_ms": 2.93
+    },
+    {
+      "repeat": 0,
+      "id": "h19",
+      "candidates_returned": 2,
+      "search_ms": 3.29,
+      "rerank_ms": 0.091,
+      "answer_ms": 25.63
+    },
+    {
+      "repeat": 0,
+      "id": "h20",
+      "candidates_returned": 2,
+      "search_ms": 3.193,
+      "rerank_ms": 0.093,
+      "answer_ms": 44.57
+    },
+    {
+      "repeat": 0,
+      "id": "h21",
+      "candidates_returned": 1,
+      "search_ms": 3.153,
+      "rerank_ms": 0.066,
+      "answer_ms": 19.16
+    },
+    {
+      "repeat": 0,
+      "id": "h22",
+      "candidates_returned": 2,
+      "search_ms": 3.143,
+      "rerank_ms": 0.092,
+      "answer_ms": 28.13
+    },
+    {
+      "repeat": 0,
+      "id": "h23",
+      "candidates_returned": 0,
+      "search_ms": 3.662,
+      "rerank_ms": 0,
+      "answer_ms": 3.45
+    },
+    {
+      "repeat": 0,
+      "id": "h24",
+      "candidates_returned": 0,
+      "search_ms": 2.67,
+      "rerank_ms": 0,
+      "answer_ms": 2.84
+    },
+    {
+      "repeat": 0,
+      "id": "h25",
+      "candidates_returned": 0,
+      "search_ms": 2.67,
+      "rerank_ms": 0,
+      "answer_ms": 2.66
+    },
+    {
+      "repeat": 0,
+      "id": "h26",
+      "candidates_returned": 0,
+      "search_ms": 2.639,
+      "rerank_ms": 0,
+      "answer_ms": 2.4
+    },
+    {
+      "repeat": 0,
+      "id": "h27",
+      "candidates_returned": 0,
+      "search_ms": 2.597,
+      "rerank_ms": 0,
+      "answer_ms": 2.48
+    },
+    {
+      "repeat": 0,
+      "id": "h28",
+      "candidates_returned": 0,
+      "search_ms": 2.421,
+      "rerank_ms": 0,
+      "answer_ms": 2.6
+    },
+    {
+      "repeat": 0,
+      "id": "h29",
+      "candidates_returned": 0,
+      "search_ms": 2.732,
+      "rerank_ms": 0,
+      "answer_ms": 2.57
+    },
+    {
+      "repeat": 0,
+      "id": "h30",
+      "candidates_returned": 0,
+      "search_ms": 2.803,
+      "rerank_ms": 0,
+      "answer_ms": 2.61
+    },
+    {
+      "repeat": 0,
+      "id": "h31",
+      "candidates_returned": 1,
+      "search_ms": 2.57,
+      "rerank_ms": 0.058,
+      "answer_ms": 15.41
+    },
+    {
+      "repeat": 0,
+      "id": "h32",
+      "candidates_returned": 0,
+      "search_ms": 2.831,
+      "rerank_ms": 0,
+      "answer_ms": 2.72
+    },
+    {
+      "repeat": 0,
+      "id": "h33",
+      "candidates_returned": 0,
+      "search_ms": 2.466,
+      "rerank_ms": 0,
+      "answer_ms": 2.59
+    },
+    {
+      "repeat": 0,
+      "id": "h34",
+      "candidates_returned": 0,
+      "search_ms": 2.796,
+      "rerank_ms": 0,
+      "answer_ms": 2.88
+    },
+    {
+      "repeat": 0,
+      "id": "h35",
+      "candidates_returned": 0,
+      "search_ms": 3.057,
+      "rerank_ms": 0,
+      "answer_ms": 3.0
+    },
+    {
+      "repeat": 1,
+      "id": "h01",
+      "candidates_returned": 2,
+      "search_ms": 2.596,
+      "rerank_ms": 0.106,
+      "answer_ms": 34.02
+    },
+    {
+      "repeat": 1,
+      "id": "h02",
+      "candidates_returned": 0,
+      "search_ms": 2.802,
+      "rerank_ms": 0,
+      "answer_ms": 2.61
+    },
+    {
+      "repeat": 1,
+      "id": "h03",
+      "candidates_returned": 1,
+      "search_ms": 3.462,
+      "rerank_ms": 0.07,
+      "answer_ms": 18.69
+    },
+    {
+      "repeat": 1,
+      "id": "h04",
+      "candidates_returned": 2,
+      "search_ms": 4.306,
+      "rerank_ms": 0.099,
+      "answer_ms": 27.65
+    },
+    {
+      "repeat": 1,
+      "id": "h05",
+      "candidates_returned": 2,
+      "search_ms": 3.143,
+      "rerank_ms": 0.109,
+      "answer_ms": 33.3
+    },
+    {
+      "repeat": 1,
+      "id": "h06",
+      "candidates_returned": 1,
+      "search_ms": 3.223,
+      "rerank_ms": 0.064,
+      "answer_ms": 19.31
+    },
+    {
+      "repeat": 1,
+      "id": "h07",
+      "candidates_returned": 3,
+      "search_ms": 3.427,
+      "rerank_ms": 0.129,
+      "answer_ms": 35.14
+    },
+    {
+      "repeat": 1,
+      "id": "h08",
+      "candidates_returned": 2,
+      "search_ms": 3.625,
+      "rerank_ms": 0.111,
+      "answer_ms": 25.03
+    },
+    {
+      "repeat": 1,
+      "id": "h09",
+      "candidates_returned": 1,
+      "search_ms": 2.663,
+      "rerank_ms": 0.062,
+      "answer_ms": 14.81
+    },
+    {
+      "repeat": 1,
+      "id": "h10",
+      "candidates_returned": 0,
+      "search_ms": 3.228,
+      "rerank_ms": 0,
+      "answer_ms": 3.19
+    },
+    {
+      "repeat": 1,
+      "id": "h11",
+      "candidates_returned": 0,
+      "search_ms": 3.614,
+      "rerank_ms": 0,
+      "answer_ms": 3.3
+    },
+    {
+      "repeat": 1,
+      "id": "h12",
+      "candidates_returned": 0,
+      "search_ms": 3.316,
+      "rerank_ms": 0,
+      "answer_ms": 3.25
+    },
+    {
+      "repeat": 1,
+      "id": "h13",
+      "candidates_returned": 1,
+      "search_ms": 2.879,
+      "rerank_ms": 0.062,
+      "answer_ms": 15.06
+    },
+    {
+      "repeat": 1,
+      "id": "h14",
+      "candidates_returned": 1,
+      "search_ms": 2.678,
+      "rerank_ms": 0.06,
+      "answer_ms": 15.74
+    },
+    {
+      "repeat": 1,
+      "id": "h15",
+      "candidates_returned": 1,
+      "search_ms": 3.111,
+      "rerank_ms": 0.081,
+      "answer_ms": 16.29
+    },
+    {
+      "repeat": 1,
+      "id": "h16",
+      "candidates_returned": 1,
+      "search_ms": 2.924,
+      "rerank_ms": 0.056,
+      "answer_ms": 15.33
+    },
+    {
+      "repeat": 1,
+      "id": "h17",
+      "candidates_returned": 1,
+      "search_ms": 3.004,
+      "rerank_ms": 0.065,
+      "answer_ms": 18.2
+    },
+    {
+      "repeat": 1,
+      "id": "h18",
+      "candidates_returned": 0,
+      "search_ms": 3.314,
+      "rerank_ms": 0,
+      "answer_ms": 2.95
+    },
+    {
+      "repeat": 1,
+      "id": "h19",
+      "candidates_returned": 2,
+      "search_ms": 3.1,
+      "rerank_ms": 0.09,
+      "answer_ms": 26.05
+    },
+    {
+      "repeat": 1,
+      "id": "h20",
+      "candidates_returned": 2,
+      "search_ms": 3.038,
+      "rerank_ms": 0.094,
+      "answer_ms": 37.15
+    },
+    {
+      "repeat": 1,
+      "id": "h21",
+      "candidates_returned": 1,
+      "search_ms": 3.049,
+      "rerank_ms": 0.065,
+      "answer_ms": 18.94
+    },
+    {
+      "repeat": 1,
+      "id": "h22",
+      "candidates_returned": 2,
+      "search_ms": 2.922,
+      "rerank_ms": 0.09,
+      "answer_ms": 26.31
+    },
+    {
+      "repeat": 1,
+      "id": "h23",
+      "candidates_returned": 0,
+      "search_ms": 3.163,
+      "rerank_ms": 0,
+      "answer_ms": 3.26
+    },
+    {
+      "repeat": 1,
+      "id": "h24",
+      "candidates_returned": 0,
+      "search_ms": 2.394,
+      "rerank_ms": 0,
+      "answer_ms": 2.39
+    },
+    {
+      "repeat": 1,
+      "id": "h25",
+      "candidates_returned": 0,
+      "search_ms": 2.406,
+      "rerank_ms": 0,
+      "answer_ms": 2.46
+    },
+    {
+      "repeat": 1,
+      "id": "h26",
+      "candidates_returned": 0,
+      "search_ms": 2.338,
+      "rerank_ms": 0,
+      "answer_ms": 2.3
+    },
+    {
+      "repeat": 1,
+      "id": "h27",
+      "candidates_returned": 0,
+      "search_ms": 2.476,
+      "rerank_ms": 0,
+      "answer_ms": 2.63
+    },
+    {
+      "repeat": 1,
+      "id": "h28",
+      "candidates_returned": 0,
+      "search_ms": 2.365,
+      "rerank_ms": 0,
+      "answer_ms": 2.43
+    },
+    {
+      "repeat": 1,
+      "id": "h29",
+      "candidates_returned": 0,
+      "search_ms": 2.601,
+      "rerank_ms": 0,
+      "answer_ms": 2.68
+    },
+    {
+      "repeat": 1,
+      "id": "h30",
+      "candidates_returned": 0,
+      "search_ms": 2.485,
+      "rerank_ms": 0,
+      "answer_ms": 2.45
+    },
+    {
+      "repeat": 1,
+      "id": "h31",
+      "candidates_returned": 1,
+      "search_ms": 2.547,
+      "rerank_ms": 0.059,
+      "answer_ms": 15.06
+    },
+    {
+      "repeat": 1,
+      "id": "h32",
+      "candidates_returned": 0,
+      "search_ms": 2.773,
+      "rerank_ms": 0,
+      "answer_ms": 2.74
+    },
+    {
+      "repeat": 1,
+      "id": "h33",
+      "candidates_returned": 0,
+      "search_ms": 2.433,
+      "rerank_ms": 0,
+      "answer_ms": 2.39
+    },
+    {
+      "repeat": 1,
+      "id": "h34",
+      "candidates_returned": 0,
+      "search_ms": 2.831,
+      "rerank_ms": 0,
+      "answer_ms": 2.86
+    },
+    {
+      "repeat": 1,
+      "id": "h35",
+      "candidates_returned": 0,
+      "search_ms": 3.185,
+      "rerank_ms": 0,
+      "answer_ms": 3.18
+    },
+    {
+      "repeat": 2,
+      "id": "h01",
+      "candidates_returned": 2,
+      "search_ms": 2.719,
+      "rerank_ms": 0.107,
+      "answer_ms": 34.1
+    },
+    {
+      "repeat": 2,
+      "id": "h02",
+      "candidates_returned": 0,
+      "search_ms": 2.616,
+      "rerank_ms": 0,
+      "answer_ms": 2.6
+    },
+    {
+      "repeat": 2,
+      "id": "h03",
+      "candidates_returned": 1,
+      "search_ms": 3.631,
+      "rerank_ms": 0.07,
+      "answer_ms": 19.14
+    },
+    {
+      "repeat": 2,
+      "id": "h04",
+      "candidates_returned": 2,
+      "search_ms": 4.245,
+      "rerank_ms": 0.099,
+      "answer_ms": 27.71
+    },
+    {
+      "repeat": 2,
+      "id": "h05",
+      "candidates_returned": 2,
+      "search_ms": 3.096,
+      "rerank_ms": 0.109,
+      "answer_ms": 32.76
+    },
+    {
+      "repeat": 2,
+      "id": "h06",
+      "candidates_returned": 1,
+      "search_ms": 3.288,
+      "rerank_ms": 0.064,
+      "answer_ms": 20.49
+    },
+    {
+      "repeat": 2,
+      "id": "h07",
+      "candidates_returned": 3,
+      "search_ms": 3.127,
+      "rerank_ms": 0.127,
+      "answer_ms": 35.01
+    },
+    {
+      "repeat": 2,
+      "id": "h08",
+      "candidates_returned": 2,
+      "search_ms": 3.445,
+      "rerank_ms": 0.093,
+      "answer_ms": 24.76
+    },
+    {
+      "repeat": 2,
+      "id": "h09",
+      "candidates_returned": 1,
+      "search_ms": 2.768,
+      "rerank_ms": 0.061,
+      "answer_ms": 14.52
+    },
+    {
+      "repeat": 2,
+      "id": "h10",
+      "candidates_returned": 0,
+      "search_ms": 3.265,
+      "rerank_ms": 0,
+      "answer_ms": 3.29
+    },
+    {
+      "repeat": 2,
+      "id": "h11",
+      "candidates_returned": 0,
+      "search_ms": 3.217,
+      "rerank_ms": 0,
+      "answer_ms": 3.23
+    },
+    {
+      "repeat": 2,
+      "id": "h12",
+      "candidates_returned": 0,
+      "search_ms": 3.352,
+      "rerank_ms": 0,
+      "answer_ms": 3.66
+    },
+    {
+      "repeat": 2,
+      "id": "h13",
+      "candidates_returned": 1,
+      "search_ms": 2.866,
+      "rerank_ms": 0.064,
+      "answer_ms": 15.41
+    },
+    {
+      "repeat": 2,
+      "id": "h14",
+      "candidates_returned": 1,
+      "search_ms": 2.692,
+      "rerank_ms": 0.06,
+      "answer_ms": 16.2
+    },
+    {
+      "repeat": 2,
+      "id": "h15",
+      "candidates_returned": 1,
+      "search_ms": 2.934,
+      "rerank_ms": 0.063,
+      "answer_ms": 16.62
+    },
+    {
+      "repeat": 2,
+      "id": "h16",
+      "candidates_returned": 1,
+      "search_ms": 2.867,
+      "rerank_ms": 0.058,
+      "answer_ms": 15.33
+    },
+    {
+      "repeat": 2,
+      "id": "h17",
+      "candidates_returned": 1,
+      "search_ms": 2.919,
+      "rerank_ms": 0.056,
+      "answer_ms": 18.45
+    },
+    {
+      "repeat": 2,
+      "id": "h18",
+      "candidates_returned": 0,
+      "search_ms": 2.966,
+      "rerank_ms": 0,
+      "answer_ms": 2.95
+    },
+    {
+      "repeat": 2,
+      "id": "h19",
+      "candidates_returned": 2,
+      "search_ms": 3.18,
+      "rerank_ms": 0.092,
+      "answer_ms": 25.09
+    },
+    {
+      "repeat": 2,
+      "id": "h20",
+      "candidates_returned": 2,
+      "search_ms": 3.107,
+      "rerank_ms": 0.1,
+      "answer_ms": 37.02
+    },
+    {
+      "repeat": 2,
+      "id": "h21",
+      "candidates_returned": 1,
+      "search_ms": 3.141,
+      "rerank_ms": 0.067,
+      "answer_ms": 18.75
+    },
+    {
+      "repeat": 2,
+      "id": "h22",
+      "candidates_returned": 2,
+      "search_ms": 3.038,
+      "rerank_ms": 0.09,
+      "answer_ms": 26.47
+    },
+    {
+      "repeat": 2,
+      "id": "h23",
+      "candidates_returned": 0,
+      "search_ms": 3.321,
+      "rerank_ms": 0,
+      "answer_ms": 3.28
+    },
+    {
+      "repeat": 2,
+      "id": "h24",
+      "candidates_returned": 0,
+      "search_ms": 2.431,
+      "rerank_ms": 0,
+      "answer_ms": 2.53
+    },
+    {
+      "repeat": 2,
+      "id": "h25",
+      "candidates_returned": 0,
+      "search_ms": 2.397,
+      "rerank_ms": 0,
+      "answer_ms": 2.44
+    },
+    {
+      "repeat": 2,
+      "id": "h26",
+      "candidates_returned": 0,
+      "search_ms": 2.311,
+      "rerank_ms": 0,
+      "answer_ms": 2.37
+    },
+    {
+      "repeat": 2,
+      "id": "h27",
+      "candidates_returned": 0,
+      "search_ms": 2.582,
+      "rerank_ms": 0,
+      "answer_ms": 2.47
+    },
+    {
+      "repeat": 2,
+      "id": "h28",
+      "candidates_returned": 0,
+      "search_ms": 2.363,
+      "rerank_ms": 0,
+      "answer_ms": 2.49
+    },
+    {
+      "repeat": 2,
+      "id": "h29",
+      "candidates_returned": 0,
+      "search_ms": 2.728,
+      "rerank_ms": 0,
+      "answer_ms": 2.56
+    },
+    {
+      "repeat": 2,
+      "id": "h30",
+      "candidates_returned": 0,
+      "search_ms": 2.457,
+      "rerank_ms": 0,
+      "answer_ms": 2.58
+    },
+    {
+      "repeat": 2,
+      "id": "h31",
+      "candidates_returned": 1,
+      "search_ms": 2.518,
+      "rerank_ms": 0.061,
+      "answer_ms": 15.35
+    },
+    {
+      "repeat": 2,
+      "id": "h32",
+      "candidates_returned": 0,
+      "search_ms": 2.931,
+      "rerank_ms": 0,
+      "answer_ms": 2.74
+    },
+    {
+      "repeat": 2,
+      "id": "h33",
+      "candidates_returned": 0,
+      "search_ms": 2.414,
+      "rerank_ms": 0,
+      "answer_ms": 2.43
+    },
+    {
+      "repeat": 2,
+      "id": "h34",
+      "candidates_returned": 0,
+      "search_ms": 2.937,
+      "rerank_ms": 0,
+      "answer_ms": 2.87
+    },
+    {
+      "repeat": 2,
+      "id": "h35",
+      "candidates_returned": 0,
+      "search_ms": 2.942,
+      "rerank_ms": 0,
+      "answer_ms": 3.02
+    }
+  ],
+  "scope": "CPU Linux local, processos novos por opção; inclui E5, Streamlit AppTest e dois índices compartilhando modelos. Latência de busca inclui OOD sem guardrails; rerank só candidatos aceitos (até dez). Não mede Cloud nem concorrência."
+}

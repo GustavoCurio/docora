@@ -1,7 +1,7 @@
 {
   "suites": [
     {
-      "executed_utc": "2026-11-05T10:20:26.947700+00:00",
+      "executed_utc": "2026-11-05T10:31:55.861858+00:00",
       "mode": "extractive",
       "suite": "original",
       "retriever_requested": "tfidf",
@@ -11,7 +11,7 @@
       "reranker_active": "none",
       "reranker_fallback_reason": null,
       "retrieval_parameters": {},
-      "index_build_ms": 12.14,
+      "index_build_ms": 12.55,
       "cases_sha256": "c22b4f4df1e5271393614992a53c25d967f301e6e1308fe678f51cf61f130ca4",
       "corpus_sha256": "c26f0e12de0e5c3324adadb649036ea2b37222a4e5a6620b2a136cd11aec3eb8",
       "total": 28,
@@ -29,14 +29,14 @@
       "ood_false_positive_rate_pct": 0.0,
       "ood_false_positives": 0,
       "faithfulness_pct": 100.0,
-      "faithfulness_sentences": 50,
+      "faithfulness_sentences": 53,
       "answer_checks": {
         "inline_citation_pct": 100.0,
         "exact_source_pct": 100.0,
         "gold_cited_in_body_pct": 100.0,
         "answers_within_budget": 28,
         "answers_without_exact_duplicates": 28,
-        "mean_words_evidence": 37.6
+        "mean_words_evidence": 39.8
       },
       "scope": "Base fictícia Lume Casa; ranking após filtros; MRR limitado a cinco; suporte lexical não mede relevância nem implicação semântica.",
       "results": [
@@ -86,7 +86,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "A Lume Casa atende São Paulo (SP), Rio de Janeiro (RJ) e Minas Gerais (MG). [F1]\n\nO prazo de entrega é de 3 a 5 dias úteis para SP e de 5 a 8 dias úteis para RJ e MG. [F1]\n\nQuando o prazo informado no checkout já terminou, o atendimento deve verificar o pedido com a transportadora. [F2]\n\nA equipe humana analisa ocorrências de atraso, endereço incorreto ou entrega não reconhecida. [F2]\n\nEste assistente não consulta sistemas de pedidos nem confirma uma nova data de entrega. [F2]\n\nA loja não oferece retirada presencial nem entrega expressa no mesmo dia. [F3]",
-          "elapsed_ms": 5.31
+          "elapsed_ms": 3.74
         },
         {
           "question": "Quanto demora para chegar em Minas Gerais?",
@@ -98,31 +98,37 @@
           "pass": true,
           "first_relevant_rank": 1,
           "retrieved_sections": [
-            "Regiões atendidas e prazo de entrega"
+            "Regiões atendidas e prazo de entrega",
+            "Atraso ou problema na entrega"
           ],
           "ranking_at_5": [
             {
               "source": "entregas.md",
               "section": "Regiões atendidas e prazo de entrega",
-              "score": 0.29988
+              "score": 0.23172
+            },
+            {
+              "source": "entregas.md",
+              "section": "Atraso ou problema na entrega",
+              "score": 0.15352
             }
           ],
           "faithfulness": {
-            "supported_sentences": 2,
-            "sentences": 2,
+            "supported_sentences": 5,
+            "sentences": 5,
             "score": 1.0
           },
           "answer_checks": {
-            "sentences": 2,
-            "words": 39,
-            "exact_source_sentences": 2,
-            "inline_cited_sentences": 2,
+            "sentences": 5,
+            "words": 83,
+            "exact_source_sentences": 5,
+            "inline_cited_sentences": 5,
             "within_budget": true,
             "no_exact_duplicates": true,
             "gold_cited_in_body": true
           },
-          "answer_text": "A Lume Casa atende São Paulo (SP), Rio de Janeiro (RJ) e Minas Gerais (MG). [F1]\n\nO prazo de entrega é de 3 a 5 dias úteis para SP e de 5 a 8 dias úteis para RJ e MG. [F1]",
-          "elapsed_ms": 1.7
+          "answer_text": "A Lume Casa atende São Paulo (SP), Rio de Janeiro (RJ) e Minas Gerais (MG). [F1]\n\nO prazo de entrega é de 3 a 5 dias úteis para SP e de 5 a 8 dias úteis para RJ e MG. [F1]\n\nQuando o prazo informado no checkout já terminou, o atendimento deve verificar o pedido com a transportadora. [F2]\n\nA equipe humana analisa ocorrências de atraso, endereço incorreto ou entrega não reconhecida. [F2]\n\nEste assistente não consulta sistemas de pedidos nem confirma uma nova data de entrega. [F2]",
+          "elapsed_ms": 2.75
         },
         {
           "question": "Vocês entregam no Rio de Janeiro?",
@@ -158,7 +164,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "A Lume Casa atende São Paulo (SP), Rio de Janeiro (RJ) e Minas Gerais (MG). [F1]",
-          "elapsed_ms": 1.56
+          "elapsed_ms": 1.5
         },
         {
           "question": "Como funciona o frete grátis?",
@@ -194,7 +200,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "O frete é gratuito para entregas em São Paulo (SP) quando o valor dos produtos, depois dos descontos, é de pelo menos R$ 250,00. [F1]\n\nPara pedidos abaixo desse valor ou destinados a RJ e MG, o frete é calculado no checkout. [F1]\n\nA base de atendimento não contém uma tabela de valores de frete por CEP. [F1]",
-          "elapsed_ms": 1.81
+          "elapsed_ms": 1.48
         },
         {
           "question": "Onde encontro o link de rastreamento?",
@@ -230,7 +236,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "O link de rastreamento fica disponível na área Meus pedidos depois da postagem. [F1]\n\nO cliente pode acompanhar a transportadora por esse link. [F1]\n\nEste documento explica o procedimento, mas não contém o status ou o código de rastreamento de pedidos individuais. [F1]",
-          "elapsed_ms": 1.84
+          "elapsed_ms": 1.56
         },
         {
           "question": "Minha entrega atrasou, como devo proceder?",
@@ -272,7 +278,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "A equipe humana analisa ocorrências de atraso, endereço incorreto ou entrega não reconhecida. [F1]\n\nEste assistente não consulta sistemas de pedidos nem confirma uma nova data de entrega. [F1]\n\nA loja não oferece retirada presencial nem entrega expressa no mesmo dia. [F2]\n\nO envio segue os prazos de entrega por estado descritos nesta base. [F2]",
-          "elapsed_ms": 2.87
+          "elapsed_ms": 2.41
         },
         {
           "question": "Existe retirada presencial?",
@@ -308,7 +314,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "A loja não oferece retirada presencial nem entrega expressa no mesmo dia. [F1]",
-          "elapsed_ms": 1.28
+          "elapsed_ms": 1.62
         },
         {
           "question": "Como posso devolver um produto?",
@@ -350,7 +356,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "A política comercial demonstrativa permite solicitar troca ou devolução em até 30 dias corridos após o recebimento. [F1]\n\nO produto deve estar sem sinais de uso, com embalagem e acessórios. [F1]\n\nA solicitação é iniciada na área Meus pedidos, na opção Trocar ou devolver. [F1]\n\nSe o produto chegar quebrado ou com avaria, a orientação é registrar uma solicitação de atendimento com fotos do produto e da embalagem. [F2]",
-          "elapsed_ms": 3.07
+          "elapsed_ms": 1.94
         },
         {
           "question": "Qual é o prazo para troca e devolução?",
@@ -386,7 +392,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "A política comercial demonstrativa permite solicitar troca ou devolução em até 30 dias corridos após o recebimento. [F1]",
-          "elapsed_ms": 1.58
+          "elapsed_ms": 1.47
         },
         {
           "question": "O produto chegou quebrado. O que fazer?",
@@ -422,7 +428,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "Se o produto chegar quebrado ou com avaria, a orientação é registrar uma solicitação de atendimento com fotos do produto e da embalagem. [F1]",
-          "elapsed_ms": 1.41
+          "elapsed_ms": 1.43
         },
         {
           "question": "Como cancelar a compra antes da postagem?",
@@ -458,7 +464,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "O cancelamento pode ser solicitado pela área Meus pedidos antes da postagem. [F1]\n\nDepois da postagem, a equipe humana orienta o procedimento de devolução. [F1]",
-          "elapsed_ms": 1.61
+          "elapsed_ms": 1.39
         },
         {
           "question": "Qual é o horário de atendimento humano?",
@@ -500,7 +506,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "O atendimento humano funciona de segunda a sexta-feira, das 9h às 18h, no horário de Brasília. [F1]\n\nNão há atendimento humano aos sábados, domingos e feriados. [F1]\n\nO formulário de solicitações pode ser preenchido a qualquer hora e é analisado no período de atendimento. [F1]\n\nO canal demonstrativo é o formulário Fale com a gente na área de atendimento da loja. [F2]",
-          "elapsed_ms": 2.63
+          "elapsed_ms": 2.41
         },
         {
           "question": "Há atendimento aos sábados?",
@@ -536,7 +542,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "O atendimento humano funciona de segunda a sexta-feira, das 9h às 18h, no horário de Brasília. [F1]\n\nNão há atendimento humano aos sábados, domingos e feriados. [F1]\n\nO formulário de solicitações pode ser preenchido a qualquer hora e é analisado no período de atendimento. [F1]",
-          "elapsed_ms": 1.89
+          "elapsed_ms": 1.6
         },
         {
           "question": "Quais são os produtos do catálogo?",
@@ -578,7 +584,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "O catálogo contém três produtos: Garrafa Aurora 750 ml, código GAR-750, por R$ 89,90; Caneca Brisa 350 ml, código CAN-350, por R$ 49,90; e Organizador Ninho, código ORG-001, por R$ 129,90. [F1]\n\nCatálogo demonstrativo de uma loja fictícia. [F2]",
-          "elapsed_ms": 1.92
+          "elapsed_ms": 1.61
         },
         {
           "question": "Qual é o material da Garrafa Aurora?",
@@ -620,7 +626,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "A Garrafa Aurora tem capacidade de 750 ml e corpo em aço inoxidável. [F1]\n\nA garrafa não deve ir ao micro-ondas nem à lava-louças. [F1]\n\nO catálogo contém três produtos: Garrafa Aurora 750 ml, código GAR-750, por R$ 89,90; Caneca Brisa 350 ml, código CAN-350, por R$ 49,90; e Organizador Ninho, código ORG-001, por R$ 129,90. [F2]",
-          "elapsed_ms": 2.66
+          "elapsed_ms": 1.65
         },
         {
           "question": "A Caneca Brisa pode ir ao micro-ondas?",
@@ -662,7 +668,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "A Caneca Brisa tem capacidade de 350 ml e é feita de cerâmica. [F1]\n\nPode ir ao micro-ondas e à lava-louças. [F1]\n\nA garrafa não deve ir ao micro-ondas nem à lava-louças. [F2]",
-          "elapsed_ms": 1.81
+          "elapsed_ms": 1.51
         },
         {
           "question": "Quais são as medidas do Organizador Ninho?",
@@ -698,7 +704,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "O Organizador Ninho é feito de bambu e mede 30 cm de largura, 20 cm de profundidade e 10 cm de altura. [F1]",
-          "elapsed_ms": 1.36
+          "elapsed_ms": 1.41
         },
         {
           "question": "Quais formas de pagamento são aceitas?",
@@ -734,7 +740,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "As formas de pagamento são Pix e cartão de crédito. [F1]\n\nA operação demonstrativa não aceita boleto nem pagamento na entrega. [F1]",
-          "elapsed_ms": 1.47
+          "elapsed_ms": 1.54
         },
         {
           "question": "Posso parcelar no cartão de crédito?",
@@ -770,7 +776,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "As formas de pagamento são Pix e cartão de crédito. [F1]\n\nCompras no cartão podem ser parceladas em até 3 vezes sem juros, com parcela mínima de R$ 30,00. [F1]",
-          "elapsed_ms": 1.52
+          "elapsed_ms": 1.39
         },
         {
           "question": "Existe desconto para Pix?",
@@ -806,7 +812,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "O pagamento por Pix tem 5% de desconto sobre o valor dos produtos. [F1]\n\nO desconto não se aplica ao frete e não acumula com outros cupons. [F1]",
-          "elapsed_ms": 1.47
+          "elapsed_ms": 1.35
         },
         {
           "question": "Qual é a previsão do tempo amanhã?",
@@ -832,7 +838,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.2
+          "elapsed_ms": 1.33
         },
         {
           "question": "Quem ganhou o campeonato de futebol?",
@@ -858,7 +864,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.32
+          "elapsed_ms": 1.22
         },
         {
           "question": "Qual é o salário do presidente?",
@@ -910,7 +916,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.17
+          "elapsed_ms": 1.14
         },
         {
           "question": "Recomende investimentos em criptomoedas.",
@@ -936,7 +942,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.17
+          "elapsed_ms": 1.28
         },
         {
           "question": "Onde está o pedido 123456?",
@@ -962,7 +968,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "Não tenho acesso ao status de pedidos individuais. Use o atendimento autenticado da loja para consultar esse pedido.",
-          "elapsed_ms": 0.01
+          "elapsed_ms": 0.02
         },
         {
           "question": "Meu CPF é 123.456.789-00, consulte minha compra.",
@@ -1014,12 +1020,12 @@
             "gold_cited_in_body": null
           },
           "answer_text": "Posso consultar informações dos documentos, mas não alterar as regras do assistente nem revelar instruções internas.",
-          "elapsed_ms": 0.01
+          "elapsed_ms": 0.02
         }
       ]
     },
     {
-      "executed_utc": "2026-11-05T10:20:27.045975+00:00",
+      "executed_utc": "2026-11-05T10:31:55.913623+00:00",
       "mode": "extractive",
       "suite": "heldout",
       "retriever_requested": "tfidf",
@@ -1029,7 +1035,7 @@
       "reranker_active": "none",
       "reranker_fallback_reason": null,
       "retrieval_parameters": {},
-      "index_build_ms": 12.14,
+      "index_build_ms": 12.55,
       "cases_sha256": "31889a2868d99512c996bce0c766857f51e8b2a8c7c665b19f46bcaae05ed001",
       "corpus_sha256": "c26f0e12de0e5c3324adadb649036ea2b37222a4e5a6620b2a136cd11aec3eb8",
       "total": 38,
@@ -1093,7 +1099,7 @@
             "gold_cited_in_body": false
           },
           "answer_text": "A base não informa se um pedido específico já foi postado. [F1]",
-          "elapsed_ms": 1.58
+          "elapsed_ms": 1.44
         },
         {
           "id": "h02",
@@ -1122,7 +1128,7 @@
             "gold_cited_in_body": false
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.22
+          "elapsed_ms": 1.24
         },
         {
           "id": "h03",
@@ -1159,7 +1165,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "A política comercial demonstrativa permite solicitar troca ou devolução em até 30 dias corridos após o recebimento. [F1]\n\nO produto deve estar sem sinais de uso, com embalagem e acessórios. [F1]",
-          "elapsed_ms": 1.64
+          "elapsed_ms": 1.46
         },
         {
           "id": "h04",
@@ -1202,7 +1208,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "Se o produto chegar quebrado ou com avaria, a orientação é registrar uma solicitação de atendimento com fotos do produto e da embalagem. [F1]\n\nO assistente não aprova trocas nem promete reembolso automaticamente. [F1]\n\nA política comercial demonstrativa permite solicitar troca ou devolução em até 30 dias corridos após o recebimento. [F2]\n\nO produto deve estar sem sinais de uso, com embalagem e acessórios. [F2]",
-          "elapsed_ms": 3.12
+          "elapsed_ms": 1.7
         },
         {
           "id": "h05",
@@ -1239,7 +1245,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "O prazo de entrega é de 3 a 5 dias úteis para SP e de 5 a 8 dias úteis para RJ e MG. [F1]",
-          "elapsed_ms": 1.43
+          "elapsed_ms": 1.5
         },
         {
           "id": "h06",
@@ -1276,7 +1282,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "O frete é gratuito para entregas em São Paulo (SP) quando o valor dos produtos, depois dos descontos, é de pelo menos R$ 250,00. [F1]\n\nPara pedidos abaixo desse valor ou destinados a RJ e MG, o frete é calculado no checkout. [F1]",
-          "elapsed_ms": 1.6
+          "elapsed_ms": 1.48
         },
         {
           "id": "h07",
@@ -1313,7 +1319,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "O link de rastreamento fica disponível na área Meus pedidos depois da postagem. [F1]\n\nO cliente pode acompanhar a transportadora por esse link. [F1]",
-          "elapsed_ms": 1.48
+          "elapsed_ms": 1.62
         },
         {
           "id": "h08",
@@ -1350,7 +1356,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "Quando o prazo informado no checkout já terminou, o atendimento deve verificar o pedido com a transportadora. [F1]\n\nA equipe humana analisa ocorrências de atraso, endereço incorreto ou entrega não reconhecida. [F1]\n\nEste assistente não consulta sistemas de pedidos nem confirma uma nova data de entrega. [F1]",
-          "elapsed_ms": 2.07
+          "elapsed_ms": 1.75
         },
         {
           "id": "h09",
@@ -1379,7 +1385,7 @@
             "gold_cited_in_body": false
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.22
+          "elapsed_ms": 1.23
         },
         {
           "id": "h10",
@@ -1408,7 +1414,7 @@
             "gold_cited_in_body": false
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.18
+          "elapsed_ms": 1.22
         },
         {
           "id": "h11",
@@ -1437,7 +1443,7 @@
             "gold_cited_in_body": false
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.31
+          "elapsed_ms": 1.21
         },
         {
           "id": "h12",
@@ -1474,7 +1480,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "O cancelamento pode ser solicitado pela área Meus pedidos antes da postagem. [F1]",
-          "elapsed_ms": 1.3
+          "elapsed_ms": 1.33
         },
         {
           "id": "h13",
@@ -1503,7 +1509,7 @@
             "gold_cited_in_body": false
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.21
+          "elapsed_ms": 1.29
         },
         {
           "id": "h14",
@@ -1532,7 +1538,7 @@
             "gold_cited_in_body": false
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.17
+          "elapsed_ms": 1.25
         },
         {
           "id": "h15",
@@ -1575,7 +1581,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "A Garrafa Aurora tem capacidade de 750 ml e corpo em aço inoxidável. [F1]\n\nA garrafa não deve ir ao micro-ondas nem à lava-louças. [F1]\n\nPode ir ao micro-ondas e à lava-louças. [F2]",
-          "elapsed_ms": 1.96
+          "elapsed_ms": 1.47
         },
         {
           "id": "h16",
@@ -1612,7 +1618,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "A Caneca Brisa tem capacidade de 350 ml e é feita de cerâmica. [F1]",
-          "elapsed_ms": 1.3
+          "elapsed_ms": 1.4
         },
         {
           "id": "h17",
@@ -1649,7 +1655,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "O Organizador Ninho é feito de bambu e mede 30 cm de largura, 20 cm de profundidade e 10 cm de altura. [F1]",
-          "elapsed_ms": 1.33
+          "elapsed_ms": 1.37
         },
         {
           "id": "h18",
@@ -1678,7 +1684,7 @@
             "gold_cited_in_body": false
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.19
+          "elapsed_ms": 1.22
         },
         {
           "id": "h19",
@@ -1707,7 +1713,7 @@
             "gold_cited_in_body": false
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.31
+          "elapsed_ms": 1.19
         },
         {
           "id": "h20",
@@ -1744,7 +1750,7 @@
             "gold_cited_in_body": false
           },
           "answer_text": "A Caneca Brisa tem capacidade de 350 ml e é feita de cerâmica. [F1]",
-          "elapsed_ms": 1.34
+          "elapsed_ms": 1.33
         },
         {
           "id": "h21",
@@ -1789,7 +1795,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "O frete é gratuito para entregas em São Paulo (SP) quando o valor dos produtos, depois dos descontos, é de pelo menos R$ 250,00. [F1]\n\nPara pedidos abaixo desse valor ou destinados a RJ e MG, o frete é calculado no checkout. [F1]\n\nA base de atendimento não contém uma tabela de valores de frete por CEP. [F1]",
-          "elapsed_ms": 1.88
+          "elapsed_ms": 1.61
         },
         {
           "id": "h22",
@@ -1834,7 +1840,7 @@
             "gold_cited_in_body": true
           },
           "answer_text": "As formas de pagamento são Pix e cartão de crédito. [F1]\n\nCompras no cartão podem ser parceladas em até 3 vezes sem juros, com parcela mínima de R$ 30,00. [F1]",
-          "elapsed_ms": 1.47
+          "elapsed_ms": 1.51
         },
         {
           "id": "h23",
@@ -1871,7 +1877,7 @@
             "gold_cited_in_body": false
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.24
+          "elapsed_ms": 1.25
         },
         {
           "id": "h24",
@@ -1898,7 +1904,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.16
+          "elapsed_ms": 1.23
         },
         {
           "id": "h25",
@@ -1925,7 +1931,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.15
+          "elapsed_ms": 1.19
         },
         {
           "id": "h26",
@@ -1979,7 +1985,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.24
+          "elapsed_ms": 1.18
         },
         {
           "id": "h28",
@@ -2006,7 +2012,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.18
+          "elapsed_ms": 1.31
         },
         {
           "id": "h29",
@@ -2033,7 +2039,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.21
+          "elapsed_ms": 1.15
         },
         {
           "id": "h30",
@@ -2068,7 +2074,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "Não há número de telefone nem WhatsApp cadastrado nesta base. [F1]",
-          "elapsed_ms": 1.34
+          "elapsed_ms": 1.37
         },
         {
           "id": "h31",
@@ -2103,7 +2109,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "As formas de pagamento são Pix e cartão de crédito. [F1]",
-          "elapsed_ms": 1.41
+          "elapsed_ms": 1.34
         },
         {
           "id": "h32",
@@ -2150,7 +2156,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "O prazo de entrega é de 3 a 5 dias úteis para SP e de 5 a 8 dias úteis para RJ e MG. [F1]\n\nQuando o prazo informado no checkout já terminou, o atendimento deve verificar o pedido com a transportadora. [F2]\n\nO cliente pode abrir uma solicitação pela área Meus pedidos. [F2]\n\nA equipe humana analisa ocorrências de atraso, endereço incorreto ou entrega não reconhecida. [F2]\n\nEste assistente não consulta sistemas de pedidos nem confirma uma nova data de entrega. [F2]\n\nA loja não oferece retirada presencial nem entrega expressa no mesmo dia. [F3]",
-          "elapsed_ms": 4.08
+          "elapsed_ms": 2.66
         },
         {
           "id": "h33",
@@ -2185,7 +2191,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "O pagamento por Pix tem 5% de desconto sobre o valor dos produtos. [F1]\n\nO desconto não se aplica ao frete e não acumula com outros cupons. [F1]",
-          "elapsed_ms": 1.68
+          "elapsed_ms": 1.46
         },
         {
           "id": "h34",
@@ -2212,7 +2218,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "Não encontrei informação suficiente nos documentos para responder. Tente reformular a pergunta ou consulte o atendimento humano.",
-          "elapsed_ms": 1.17
+          "elapsed_ms": 1.34
         },
         {
           "id": "h35",
@@ -2247,7 +2253,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "A política comercial demonstrativa permite solicitar troca ou devolução em até 30 dias corridos após o recebimento. [F1]\n\nA solicitação é iniciada na área Meus pedidos, na opção Trocar ou devolver. [F1]",
-          "elapsed_ms": 1.61
+          "elapsed_ms": 1.44
         },
         {
           "id": "h36",
@@ -2274,7 +2280,7 @@
             "gold_cited_in_body": null
           },
           "answer_text": "Não tenho acesso ao status de pedidos individuais. Use o atendimento autenticado da loja para consultar esse pedido.",
-          "elapsed_ms": 0.01
+          "elapsed_ms": 0.02
         },
         {
           "id": "h37",

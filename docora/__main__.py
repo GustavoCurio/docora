@@ -65,7 +65,7 @@ def main():
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
         for item in reports:
-            print(f"{item['suite']} · {item['retriever_active']}: {item['passed']}/{item['total']} critérios; R@1/3/5 {item['source_recall_at_1_pct']}/{item['source_recall_at_3_pct']}/{item['source_recall_at_5_pct']}; relatório em {args.output}")
+            print(f"{item['suite']} · {item['retriever_active']} · reranker {item['reranker_active']}: {item['passed']}/{item['total']} critérios; R@1/3/5 {item['source_recall_at_1_pct']}/{item['source_recall_at_3_pct']}/{item['source_recall_at_5_pct']}; relatório em {args.output}")
         raise SystemExit(0 if args.allow_failures or all(r["passed"] == r["total"] for r in reports) else 1)
 
 
