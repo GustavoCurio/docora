@@ -50,7 +50,7 @@ st.divider()
 conversation, references = st.columns([2.15, 1], gap="large")
 
 @st.cache_resource
-def embedding_resource(_cache_bust=2):
+def embedding_resource(_cache_bust=3):
     """Compartilha um único encoder local entre a demo e as bibliotecas enviadas."""
     from docora.embeddings import load_embedder
     return load_embedder()
@@ -58,28 +58,51 @@ def embedding_resource(_cache_bust=2):
 
 def _build_demo_index(retriever, reranker):
     """Monta o índice da demo com fallback lexical se o híbrido falhar no boot."""
+    import inspect
     retriever = str(retriever or "hybrid")
     reranker = str(reranker or "none")
     if retriever not in {"hybrid", "bm25", "tfidf"}:
         retriever = "hybrid"
     if reranker not in {"none", "rules", "crossencoder"}:
         reranker = "none"
+    params = inspect.signature(KnowledgeIndex.__init__).parameters
+    supports_reranker = "reranker" in params
+    supports_embedder = "embedder" in params
+    primary_error = None
     try:
-        if retriever == "hybrid":
+        kwargs = {"retriever": retriever}
+        if supports_embedder:
+            kwargs["embedder"] = None
+        if supports_reranker:
+            kwargs["reranker"] = reranker
+        if retriever == "hybrid" and supports_embedder:
             model, reason = embedding_resource()
-            index = KnowledgeIndex(demo_chunks(), retriever=retriever, embedder=model, reranker=reranker)
+            kwargs["embedder"] = model
+            index = KnowledgeIndex(demo_chunks(), **kwargs)
             if reason:
                 index.fallback_reason = reason
             return index
-        return KnowledgeIndex(demo_chunks(), retriever=retriever, embedder=None, reranker=reranker)
+        return KnowledgeIndex(demo_chunks(), **kwargs)
     except Exception as error:
-        index = KnowledgeIndex(demo_chunks(), retriever="tfidf", embedder=None, reranker="none")
-        index.fallback_reason = f"Falha ao iniciar a busca ({type(error).__name__}); usando TF-IDF."
+        primary_error = error
+    try:
+        index = KnowledgeIndex(demo_chunks())
+        detail = f"{type(primary_error).__name__}: {primary_error}" if primary_error else "desconhecida"
+        index.fallback_reason = f"Falha ao iniciar a busca ({detail}); usando TF-IDF mínimo."
+        if not hasattr(index, "active_reranker"):
+            index.active_reranker = "none"
+        if not hasattr(index, "reranker_fallback_reason"):
+            index.reranker_fallback_reason = None
         return index
+    except Exception as error:
+        raise RuntimeError(
+            f"Boot da demo falhou. Primário: {type(primary_error).__name__}: {primary_error}; "
+            f"mínimo: {type(error).__name__}: {error}"
+        ) from error
 
 
 @st.cache_resource
-def demo_index(retriever, reranker, _cache_bust=2):
+def demo_index(retriever, reranker, _cache_bust=3):
     """Cria o índice demonstrativo compartilhado pelo cache de recursos do Streamlit."""
     return _build_demo_index(retriever, reranker)
 
@@ -131,12 +154,14 @@ with references:
                 except (ValueError, TypeError, RuntimeError) as error:
                     st.error(str(error))
         if index:
-            st.caption(f"Busca ativa: {retriever_names[index.active_retriever]}")
-            st.caption(f"Reordenação ativa: {reranker_names[index.active_reranker]}")
-            if index.reranker_fallback_reason:
+            active = getattr(index, "active_retriever", "tfidf")
+            active_rr = getattr(index, "active_reranker", "none")
+            st.caption(f"Busca ativa: {retriever_names.get(active, active)}")
+            st.caption(f"Reordenação ativa: {reranker_names.get(active_rr, active_rr)}")
+            if getattr(index, "reranker_fallback_reason", None):
                 st.caption(index.reranker_fallback_reason)
-            if index.fallback_reason:
-                st.caption("Modelo local ausente ou indisponível. A consulta usa TF-IDF.")
+            if getattr(index, "fallback_reason", None):
+                st.caption(index.fallback_reason)
             documents = sorted({c.source for c in index.chunks})
             st.caption(f"{len(documents)} documentos disponíveis · {len(index.chunks)} trechos")
             with st.expander("Explorar documentos"):
