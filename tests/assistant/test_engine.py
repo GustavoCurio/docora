@@ -1,12 +1,12 @@
-from io import BytesIO
 import json
+from io import BytesIO
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
 
 from docora.assistant import ProviderError, answer_question
-from docora.retrieval import KnowledgeIndex, MAX_BYTES, chunks_from_text, ingest_bytes
+from docora.retrieval import MAX_BYTES, KnowledgeIndex, chunks_from_text, ingest_bytes
 
 
 def test_reference_questions(reference_case, index):
@@ -152,5 +152,5 @@ def test_missing_configuration_and_invalid_question(index, monkeypatch):
     with pytest.raises(ValueError, match="OPENAI_MODEL"):
         answer_question("Desconto no Pix?", index, mode="generative")
     for question in [" ", "a" * 1501]:
-        with pytest.raises(ValueError, match="1 a 1.500"):
+        with pytest.raises(ValueError, match=r"1 a 1\.500"):
             answer_question(question, index)

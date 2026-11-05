@@ -1,21 +1,55 @@
 """Métricas locais de recuperação, abstenção e suporte lexical das respostas."""
 
-from datetime import datetime, timezone
-from hashlib import sha256
+from __future__ import annotations
+
 import json
 import re
+from collections.abc import Sequence
+from datetime import UTC, datetime
+from hashlib import sha256
 from time import perf_counter
 from types import SimpleNamespace
+from typing import Any, NotRequired, TypedDict, cast
 
-from .assistant import answer_question, guard_question
+from .assistant import Answer, answer_question, guard_question
+from .contracts import EvaluationIndex, SearchIndex, Source
 from .retrieval import terms
 
 
-def answer_units(answer):
+class ExpectedSource(TypedDict):
+    source: str
+    section: str
+
+
+class EvaluationCase(TypedDict):
+    question: str
+    expected_status: str
+    source: NotRequired[str]
+    section: NotRequired[str]
+    acceptable_sources: NotRequired[list[ExpectedSource]]
+
+
+class AnswerChecks(TypedDict):
+    sentences: int
+    words: int
+    exact_source_sentences: int
+    inline_cited_sentences: int
+    within_budget: bool
+    no_exact_duplicates: bool
+    gold_cited_in_body: bool | None
+
+
+class Faithfulness(TypedDict):
+    supported_sentences: int
+    sentences: int
+    score: float | None
+
+
+def answer_units(answer: Answer) -> list[tuple[str, str | None, bool]]:
     """Lê referências inline novas e cabeçalhos herdados do extrativo anterior."""
     body = answer.message.removeprefix("Encontrei estas informações nos documentos:\n\n")
-    current = None
-    units = []
+    current: str | None = None
+    units: list[tuple[str, str | None, bool]] = []
     for block in body.splitlines():
         heading = re.fullmatch(r"\*\*[^\n]+\*\* \[(F\d+)\]", block.strip())
         if heading:
@@ -33,15 +67,18 @@ def answer_units(answer):
     return units
 
 
-def answer_checks(answer, gold):
+def answer_checks(answer: Answer, gold: Sequence[ExpectedSource]) -> AnswerChecks:
     """Checagens da resposta: cópia, referência, fonte esperada, limite e repetição.
 
     Não são um julgamento semântico: uma sentença copiada pode omitir ressalvas.
     Os limites de seis sentenças e 120 palavras são fixos para ambas as suítes.
     """
     units = answer_units(answer) if answer.status == "evidence_found" else []
-    sources = {s["reference"]: s for s in answer.sources}
-    compact = lambda text: " ".join(text.split())
+    sources: dict[str | None, Source] = {s["reference"]: s for s in answer.sources}
+
+    def compact(text: str) -> str:
+        return " ".join(text.split())
+
     exact = sum(ref in sources and compact(text) in compact(sources[ref]["text"]) for text, ref, _ in units)
     words = sum(len(text.split()) for text, _, _ in units)
     cited_gold = any(
@@ -61,7 +98,7 @@ def answer_checks(answer, gold):
     }
 
 
-def expected_sources(case):
+def expected_sources(case: EvaluationCase) -> list[ExpectedSource]:
     """Aceita uma fonte única ou uma lista de alternativas igualmente válidas."""
     if case.get("acceptable_sources"):
         return case["acceptable_sources"]
@@ -70,7 +107,7 @@ def expected_sources(case):
     return []
 
 
-def faithfulness(answer):
+def faithfulness(answer: Answer) -> Faithfulness:
     """Conta sentenças com >=80% dos termos presentes no trecho citado.
 
     Remove somente a introdução fixa, cabeçalhos com referência e divisórias.
@@ -79,7 +116,7 @@ def faithfulness(answer):
     """
     if answer.status != "evidence_found":
         return {"supported_sentences": 0, "sentences": 0, "score": None}
-    by_ref = {source["reference"]: terms(source["text"]) for source in answer.sources}
+    by_ref: dict[str | None, set[str]] = {source["reference"]: terms(source["text"]) for source in answer.sources}
     supported = total = 0
     for sentence, reference, _ in answer_units(answer):
         tokens = terms(sentence)
@@ -91,7 +128,7 @@ def faithfulness(answer):
     return {"supported_sentences": supported, "sentences": total, "score": supported / total if total else None}
 
 
-def evaluate(cases, index, suite="original"):
+def evaluate(cases: Sequence[EvaluationCase], index: EvaluationIndex, suite: str = "original") -> dict[str, Any]:
     """Mede ranking filtrado @1/3/5, MRR@5, status e suporte lexical.
 
     O ranking tem os mesmos filtros da aplicação. Encaminhamentos não fazem
@@ -100,9 +137,10 @@ def evaluate(cases, index, suite="original"):
     """
     if not cases:
         raise ValueError("O conjunto de avaliação precisa conter casos.")
-    results = []
+    results: list[dict[str, Any]] = []
     recall = {k: 0 for k in (1, 3, 5)}
-    answerable = reciprocal = supported = sentences = 0
+    answerable = supported = sentences = 0
+    reciprocal = 0.0
     for case in cases:
         # Uma única inferência por pergunta: resposta e métricas observam o
         # mesmo ranking. O reranker sempre recebe seu top-10 antes do corte.
@@ -110,7 +148,12 @@ def evaluate(cases, index, suite="original"):
         ranking = index.search(case["question"], top_k=5) if not guard_question(case["question"]) else []
         answer = answer_question(
             case["question"],
-            SimpleNamespace(search=lambda question: ranking[:3], embedder=getattr(index, "embedder", None)),
+            cast(
+                SearchIndex,
+                SimpleNamespace(
+                    search=lambda question, ranking=ranking: ranking[:3], embedder=getattr(index, "embedder", None)
+                ),
+            ),
         )
         answer.elapsed_ms = round((perf_counter() - started) * 1000, 2)
         gold = expected_sources(case)
@@ -159,13 +202,13 @@ def evaluate(cases, index, suite="original"):
     )
     passed = sum(row["pass"] for row in results)
 
-    def percent(numerator, denominator):
+    def percent(numerator: float, denominator: int) -> float | None:
         return round(100 * numerator / denominator, 2) if denominator else None
 
     metadata = {}
     if getattr(index, "active_retriever", "tfidf") == "hybrid":
         from .embeddings import MODEL_REPO, MODEL_REVISION
-        from .retrieval import HYBRID_MIN_COSINE, HYBRID_MAX_GAP
+        from .retrieval import HYBRID_MAX_GAP, HYBRID_MIN_COSINE
 
         metadata = {
             "embedding_model": MODEL_REPO,
@@ -175,7 +218,7 @@ def evaluate(cases, index, suite="original"):
             "rrf_k": 60,
         }
     if getattr(index, "requested_reranker", "none") == "crossencoder":
-        from .crossencoder import MODEL_REPO, MODEL_REVISION, MODEL_FILE
+        from .crossencoder import MODEL_FILE, MODEL_REPO, MODEL_REVISION
 
         metadata.update(
             crossencoder_model=MODEL_REPO,
@@ -185,7 +228,7 @@ def evaluate(cases, index, suite="original"):
             max_pair_tokens=256,
         )
     return {
-        "executed_utc": datetime.now(timezone.utc).isoformat(),
+        "executed_utc": datetime.now(UTC).isoformat(),
         "mode": "extractive",
         "suite": suite,
         "retriever_requested": getattr(index, "requested_retriever", "tfidf"),

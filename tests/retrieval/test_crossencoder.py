@@ -1,8 +1,8 @@
 """Cross-encoder: apenas mocks na suíte rápida, sem pesos nem rede."""
 
+import sys
 from types import SimpleNamespace
 from unittest.mock import Mock
-import sys
 
 import numpy as np
 import pytest

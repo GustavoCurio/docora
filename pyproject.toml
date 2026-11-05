@@ -20,6 +20,9 @@ ignore = [
     "RUF001", "RUF002", "RUF003",  # Pontuação e caracteres dos exemplos em português.
 ]
 
+[tool.ruff.lint.per-file-ignores]
+"app.py" = ["E402"]  # O bootstrap do Cloud prioriza o pacote local antes dos imports.
+
 [tool.mypy]
 files = ["docora"]
 python_version = "3.12"
@@ -31,8 +34,8 @@ warn_unused_ignores = true
 show_error_codes = true
 
 [[tool.mypy.overrides]]
-module = ["onnxruntime.*"]
-ignore_missing_imports = true  # Runtime nativo sem stubs nem marcador py.typed.
+module = ["onnxruntime.*", "tokenizers.*"]
+ignore_missing_imports = true  # Bibliotecas instaladas sem stubs nem marcador py.typed.
 
 [tool.coverage.run]
 source = ["docora"]

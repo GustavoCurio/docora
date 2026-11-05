@@ -37,7 +37,7 @@ def test_load_example_is_idempotent_and_preserves_demo_history(start_app):
         next(b for b in app.button if b.label == "Carregar exemplo").click().run()
         assert not app.exception
         assert any("Exemplo carregado: Lume Casa" in item.value for item in app.success)
-        assert any("3 documentos disponíveis · 20 trechos" == item.value for item in app.caption)
+        assert any(item.value == "3 documentos disponíveis · 20 trechos" for item in app.caption)
         assert app.session_state["history"] == history
         assert len(app.chat_message) == 2
 

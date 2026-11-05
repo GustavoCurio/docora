@@ -1,9 +1,12 @@
 """Cross-encoder mMARCO multilíngue em ONNX INT8, inteiramente local."""
 
-from functools import lru_cache
+from __future__ import annotations
+
 import os
-from pathlib import Path
 import tempfile
+from collections.abc import Sequence
+from functools import lru_cache
+from pathlib import Path
 from threading import RLock
 
 import numpy as np
@@ -20,7 +23,7 @@ class LocalCrossEncoder:
     arena desativada e sem Torch, transformers ou código remoto do modelo.
     """
 
-    def __init__(self, cache_dir, allow_download=False):
+    def __init__(self, cache_dir: str | Path, allow_download: bool = False) -> None:
         os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
         from huggingface_hub import hf_hub_download
 
@@ -52,7 +55,7 @@ class LocalCrossEncoder:
         self.inputs = {item.name for item in self.session.get_inputs()}
         self.lock = RLock()
 
-    def predict(self, question, passages):
+    def predict(self, question: str, passages: Sequence[str]) -> list[float]:
         """Retorna um logit por par; escores servem só para ordenar, sem corte OOD."""
         scores = []
         with self.lock:
@@ -72,7 +75,7 @@ class LocalCrossEncoder:
 
 
 @lru_cache(maxsize=1)
-def load_crossencoder():
+def load_crossencoder() -> tuple[LocalCrossEncoder | None, str | None]:
     """Somente cache, salvo DOCORA_ALLOW_MODEL_DOWNLOAD=1; falha memorizada.
 
     DOCORA_RERANKER=crossencoder é uma escolha explícita. O padrão none

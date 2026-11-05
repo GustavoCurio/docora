@@ -1,10 +1,12 @@
 """Avaliação reproduzível e consultas do Docora pelo terminal."""
 
+from __future__ import annotations
+
 import argparse
 import json
 import os
-from pathlib import Path
 import tempfile
+from pathlib import Path
 
 from .assistant import answer_question
 from .evaluation import evaluate
@@ -13,7 +15,7 @@ from .retrieval import KnowledgeIndex, demo_chunks
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def main():
+def main() -> None:
     """Oferece os subcomandos ask e evaluate sobre a biblioteca demonstrativa.
 
     ask imprime a resposta em JSON; evaluate grava o relatório no caminho
@@ -50,9 +52,9 @@ def main():
         from .crossencoder import load_crossencoder
 
         os.environ["DOCORA_ALLOW_MODEL_DOWNLOAD"] = "1"
-        model, reason = load_crossencoder()
-        print("Cross-encoder local pronto no cache." if model else reason)
-        raise SystemExit(0 if model else 1)
+        reranker_model, reason = load_crossencoder()
+        print("Cross-encoder local pronto no cache." if reranker_model else reason)
+        raise SystemExit(0 if reranker_model else 1)
     if args.command == "prepare-model":
         from .embeddings import load_embedder
 

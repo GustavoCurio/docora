@@ -1,12 +1,16 @@
 """Encoder multilíngue ONNX quantizado, local e carregado sob demanda."""
 
-from functools import lru_cache
+from __future__ import annotations
+
 import os
-from pathlib import Path
 import tempfile
+from collections.abc import Sequence
+from functools import lru_cache
+from pathlib import Path
 from threading import RLock
 
 import numpy as np
+from numpy.typing import NDArray
 
 MODEL_REPO = "Xenova/multilingual-e5-small"
 MODEL_REVISION = "761b726dd34fb83930e26aab4e9ac3899aa1fa78"
@@ -21,7 +25,7 @@ class LocalEmbedder:
     protege o tokenizador compartilhado por sessões do Streamlit.
     """
 
-    def __init__(self, cache_dir, allow_download=False):
+    def __init__(self, cache_dir: str | Path, allow_download: bool = False) -> None:
         os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
         from huggingface_hub import hf_hub_download
 
@@ -52,7 +56,7 @@ class LocalEmbedder:
         self.inputs = {item.name for item in self.session.get_inputs()}
         self.lock = RLock()
 
-    def encode(self, texts, *, query=False):
+    def encode(self, texts: Sequence[str], *, query: bool = False) -> NDArray[np.float32]:
         """Retorna float32 (n, 384); nunca envia textos a serviços remotos."""
         prefix = "query: " if query else "passage: "
         vectors = []
@@ -73,7 +77,7 @@ class LocalEmbedder:
 
 
 @lru_cache(maxsize=1)
-def load_embedder():
+def load_embedder() -> tuple[LocalEmbedder | None, str | None]:
     """Reutiliza modelo ou falha; sem download implícito no boot da demo.
 
     DOCORA_ALLOW_MODEL_DOWNLOAD=1 autoriza baixar apenas pesos/tokenizador

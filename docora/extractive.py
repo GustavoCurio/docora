@@ -1,17 +1,23 @@
 """Seleção de sentenças em português, reutilizando o encoder quando disponível."""
 
-from difflib import SequenceMatcher
+from __future__ import annotations
+
 import re
+from collections.abc import Sequence
+from difflib import SequenceMatcher
 
 import numpy as np
 
+from .contracts import Embedder, Source
 from .retrieval import expanded_query, normalize, terms
+
+type Candidate = tuple[float, int, int, str, str]
 
 MAX_SENTENCES = 6
 MAX_WORDS = 120
 
 
-def split_sentences(text):
+def split_sentences(text: str) -> list[str]:
     """Separa parágrafos/listas e pontuação, preservando decimais e abreviações.
 
     É uma heurística para português, sem dependência de modelos linguísticos.
@@ -37,25 +43,29 @@ def split_sentences(text):
     return result
 
 
-def near_duplicate(left, right):
+def near_duplicate(left: str, right: str) -> bool:
     """Remove repetição exata, Jaccard >=0,85 ou semelhança textual >=0,92."""
+
     # Textos quase iguais podem expressar políticas incompatíveis. Preserve
     # números, negações e condições diferentes para inspeção nas fontes.
-    signature = lambda text: re.findall(
-        r"\b(?:\d+(?:[.,]\d+)*|não|nao|nunca|sem|antes|após|apos|até|ate|exceto|somente)\b", normalize(text)
-    )
+    def signature(text: str) -> list[str]:
+        return re.findall(
+            r"\b(?:\d+(?:[.,]\d+)*|não|nao|nunca|sem|antes|após|apos|até|ate|exceto|somente)\b", normalize(text)
+        )
+
     if signature(left) != signature(right):
         return False
     a, b = terms(left), terms(right)
     return (
         normalize(left) == normalize(right)
-        or bool(a | b)
-        and len(a & b) / len(a | b) >= 0.85
+        or (bool(a | b) and len(a & b) / len(a | b) >= 0.85)
         or SequenceMatcher(None, normalize(left), normalize(right), autojunk=False).ratio() >= 0.92
     )
 
 
-def select_sentences(question, sources, embedder=None):
+def select_sentences(
+    question: str, sources: Sequence[Source], embedder: Embedder | None = None
+) -> list[tuple[str, str]]:
     """Seleciona até seis sentenças/120 palavras, cada uma com sua referência.
 
     Overlap normalizado e uma prioridade 1/(rank+1) ordenam as candidatas.
@@ -66,7 +76,7 @@ def select_sentences(question, sources, embedder=None):
     ranking e preserva a posição original das sentenças em cada trecho.
     """
     query = terms(expanded_query(question))
-    candidates = []
+    candidates: list[Candidate] = []
     for rank, source in enumerate(sources):
         heading_overlap = len(query & terms(source["section"])) / max(len(query), 1)
         for position, sentence in enumerate(split_sentences(source["text"])):
@@ -89,14 +99,17 @@ def select_sentences(question, sources, embedder=None):
             if (norms < 1e-12).any():
                 raise ValueError("Vetor de sentença vazio.")
             semantic = (vectors @ query_vector.T).ravel() / norms
-            candidates = [(c[0] + float(similarity), *c[1:]) for c, similarity in zip(candidates, semantic)]
+            candidates = [
+                (c[0] + float(similarity), *c[1:]) for c, similarity in zip(candidates, semantic, strict=False)
+            ]
         except Exception:
             # Uma falha opcional na seleção nunca impede a resposta lexical.
             pass
     ordered = sorted(candidates, key=lambda c: (-c[0], c[1], c[2]))
-    selected, words = [], 0
+    selected: list[Candidate] = []
+    words = 0
 
-    def add(candidate):
+    def add(candidate: Candidate) -> None:
         nonlocal words
         count = len(candidate[3].split())
         if len(selected) >= MAX_SENTENCES or words + count > MAX_WORDS:

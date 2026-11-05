@@ -73,6 +73,7 @@ def test_oversized_sentence_is_never_truncated_into_an_unsupported_claim():
 
 def test_available_encoder_selects_paraphrase_and_failure_keeps_lexical_fallback():
     from unittest.mock import Mock
+
     import numpy as np
 
     sources = [

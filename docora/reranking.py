@@ -1,11 +1,15 @@
 """Reranking de candidatos já aceitos, com regras sem modelo adicional."""
 
-from .retrieval import expanded_query, normalize, terms
+from __future__ import annotations
+
+from collections.abc import Sequence
+
+from .retrieval import Hit, expanded_query, normalize, terms
 
 TOP_N = 10
 
 
-def rules_rerank(question, hits):
+def rules_rerank(question: str, hits: Sequence[Hit]) -> list[Hit]:
     """Combina prioridade do ranking com overlap de seção, título e corpo.
 
     Pesos fixos, sem aliases adicionais: 0,5/(rank+1), seção 0,3, título
@@ -16,7 +20,7 @@ def rules_rerank(question, hits):
     denominator = max(len(query), 1)
     plain = normalize(question)
 
-    def score(item):
+    def score(item: tuple[int, Hit]) -> float:
         rank, hit = item
         chunk = hit.chunk
         return (

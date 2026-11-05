@@ -3,8 +3,8 @@ from unittest.mock import Mock
 import numpy as np
 import pytest
 
-from docora.assistant import answer_question
 from docora import embeddings
+from docora.assistant import answer_question
 from docora.ranking import BM25, rrf, tokenize
 from docora.retrieval import KnowledgeIndex, chunks_from_text, demo_chunks
 

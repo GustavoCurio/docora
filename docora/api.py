@@ -1,7 +1,9 @@
 """API HTTP para consultar a base demonstrativa do Docora."""
 
+from __future__ import annotations
+
 from functools import lru_cache
-from typing import Literal
+from typing import Any, Literal
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
@@ -15,7 +17,7 @@ app = FastAPI(
 
 
 @lru_cache(maxsize=1)
-def index():
+def index() -> KnowledgeIndex:
     """Inicializa e reutiliza o índice demonstrativo no processo que atende à API."""
     return KnowledgeIndex(demo_chunks())
 
@@ -28,7 +30,7 @@ class AskRequest(BaseModel):
 
 
 @app.get("/health")
-def health():
+def health() -> dict[str, str | int]:
     """Retorna disponibilidade e número de trechos, inicializando a base se necessário."""
     return {
         "status": "ok",
@@ -39,13 +41,13 @@ def health():
 
 
 @app.get("/sources")
-def sources():
+def sources() -> dict[str, list[str] | int]:
     """Lista os documentos e a quantidade de trechos da base demonstrativa do servidor."""
     return {"documents": sorted({chunk.source for chunk in index().chunks}), "chunks": len(index().chunks)}
 
 
 @app.post("/ask")
-def ask(body: AskRequest):
+def ask(body: AskRequest) -> dict[str, Any]:
     """Executa uma consulta na biblioteca demonstrativa e devolve o contrato Answer.
 
     Args:

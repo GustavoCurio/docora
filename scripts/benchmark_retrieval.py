@@ -1,14 +1,14 @@
 """Mede boot, memória e smoke extrativo real, sem chamar a OpenAI (Linux)."""
 
 import argparse
-from datetime import datetime, timezone
 import json
 import os
-from pathlib import Path
 import platform
 import resource
 import sys
 import tempfile
+from datetime import UTC, datetime
+from pathlib import Path
 from time import perf_counter
 from unittest.mock import Mock, patch
 
@@ -24,8 +24,8 @@ def main():
     cache_preexisting = cache.exists() and any(cache.rglob("*.onnx"))
     started = perf_counter()
     from docora.assistant import answer_question
-    from docora.embeddings import load_embedder, MODEL_REPO, MODEL_REVISION
-    from docora.retrieval import demo_chunks, KnowledgeIndex
+    from docora.embeddings import MODEL_REPO, MODEL_REVISION
+    from docora.retrieval import KnowledgeIndex, demo_chunks
 
     imported_ms = (perf_counter() - started) * 1000
     index = KnowledgeIndex(demo_chunks(), retriever="hybrid")
@@ -58,7 +58,7 @@ def main():
         assert ui_answer["sources"][0]["section"] == "Regiões atendidas e prazo de entrega"
         provider.assert_not_called()
     report = {
-        "executed_utc": datetime.now(timezone.utc).isoformat(),
+        "executed_utc": datetime.now(UTC).isoformat(),
         "python": platform.python_version(),
         "platform": platform.platform(),
         "model": MODEL_REPO,

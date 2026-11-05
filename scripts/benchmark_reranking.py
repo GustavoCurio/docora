@@ -1,13 +1,13 @@
 """Mede recursos e latência do reranking em processo Linux, sem OpenAI."""
 
 import argparse
-from datetime import datetime, timezone
 import json
 import os
-from pathlib import Path
 import platform
 import resource
 import sys
+from datetime import UTC, datetime
+from pathlib import Path
 from time import perf_counter
 from unittest.mock import Mock, patch
 
@@ -37,10 +37,11 @@ def main():
         "crossencoder": any(cache.glob("models--cross-encoder--mmarco*/snapshots/*/onnx/*.onnx")),
     }
     started = perf_counter()
-    from docora.assistant import answer_question, guard_question
-    from docora.retrieval import KnowledgeIndex, demo_chunks
-    from docora.crossencoder import MODEL_REPO, MODEL_REVISION, MODEL_FILE
     import numpy as np
+
+    from docora.assistant import answer_question, guard_question
+    from docora.crossencoder import MODEL_FILE, MODEL_REPO, MODEL_REVISION
+    from docora.retrieval import KnowledgeIndex, demo_chunks
 
     # Mesma base E5 para isolar a memória adicional do reranker.
     index = KnowledgeIndex(demo_chunks(), retriever="hybrid", reranker=args.reranker)
@@ -113,7 +114,7 @@ def main():
         top10_times.append((perf_counter() - now) * 1000)
     files = list(cache.glob("models--cross-encoder--mmarco*/snapshots/*/onnx/*.onnx"))
     report = {
-        "executed_utc": datetime.now(timezone.utc).isoformat(),
+        "executed_utc": datetime.now(UTC).isoformat(),
         "python": platform.python_version(),
         "platform": platform.platform(),
         "retriever": index.active_retriever,

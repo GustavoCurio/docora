@@ -1,22 +1,102 @@
 """Ingestão e índices locais TF-IDF, BM25 e híbrido com RRF."""
 
+from __future__ import annotations
+
+import os
+import re
+import unicodedata
+from collections.abc import Iterable
 from dataclasses import asdict, dataclass
+from enum import Enum, auto
 from hashlib import sha256
 from io import BytesIO
 from pathlib import Path
-import re
-import os
-import unicodedata
 from time import perf_counter
+from typing import Literal, cast
 
 import numpy as np
+from numpy.typing import ArrayLike, NDArray
+from scipy.sparse import csr_matrix
 from sklearn.feature_extraction.text import TfidfVectorizer
+
+from .contracts import ChunkData, CrossEncoder, Embedder
+from .ranking import BM25
 
 BASE_DIR = Path(__file__).resolve().parents[1] / "data" / "knowledge_base"
 MAX_BYTES = 2 * 1024 * 1024
 MAX_CHARS = 150_000
 STOP_WORDS = set(
-    "a ao aos as o os de da das do dos em um uma uns umas e ou se que qual quais como quando onde por para com sem sobre no na nos nas eu meu minha voce voces me posso pode podem poderia quero saber funciona tem tenho faz fazer e ela ele isso esse essa este esta isto sao ser foi muito por favor quanto quantos ate".split()
+    [
+        "a",
+        "ao",
+        "aos",
+        "as",
+        "o",
+        "os",
+        "de",
+        "da",
+        "das",
+        "do",
+        "dos",
+        "em",
+        "um",
+        "uma",
+        "uns",
+        "umas",
+        "e",
+        "ou",
+        "se",
+        "que",
+        "qual",
+        "quais",
+        "como",
+        "quando",
+        "onde",
+        "por",
+        "para",
+        "com",
+        "sem",
+        "sobre",
+        "no",
+        "na",
+        "nos",
+        "nas",
+        "eu",
+        "meu",
+        "minha",
+        "voce",
+        "voces",
+        "me",
+        "posso",
+        "pode",
+        "podem",
+        "poderia",
+        "quero",
+        "saber",
+        "funciona",
+        "tem",
+        "tenho",
+        "faz",
+        "fazer",
+        "e",
+        "ela",
+        "ele",
+        "isso",
+        "esse",
+        "essa",
+        "este",
+        "esta",
+        "isto",
+        "sao",
+        "ser",
+        "foi",
+        "muito",
+        "por",
+        "favor",
+        "quanto",
+        "quantos",
+        "ate",
+    ]
 )
 ALIASES = {
     "devolver": "devolucao troca",
@@ -39,24 +119,29 @@ ALIASES = {
     "cancelar": "cancelamento",
     "falar": "contato atendimento",
 }
-_AUTO_EMBEDDER = object()
-_AUTO_RERANKER = object()
+
+
+class _AutoModel(Enum):
+    EMBEDDER = auto()
+    RERANKER = auto()
+
+
 # Calibrados somente em questions.json + development_questions.json.
 HYBRID_MIN_COSINE = 0.85
 HYBRID_MAX_GAP = 0.03
 
 
-def normalize(text):
+def normalize(text: str) -> str:
     """Normaliza caixa e remove marcas de acento para a comparação lexical."""
     return "".join(c for c in unicodedata.normalize("NFKD", text.casefold()) if not unicodedata.combining(c))
 
 
-def terms(text):
+def terms(text: str) -> set[str]:
     """Retorna termos únicos com ao menos dois caracteres, excluindo as stopwords configuradas."""
     return {token for token in re.findall(r"\b\w{2,}\b", normalize(text)) if token not in STOP_WORDS}
 
 
-def expanded_query(question):
+def expanded_query(question: str) -> str:
     """Acrescenta aliases explícitos do domínio à pergunta normalizada, preservando o texto base."""
     original = normalize(question)
     return original + " " + " ".join(ALIASES[token] for token in terms(question) if token in ALIASES)
@@ -80,9 +165,9 @@ class Chunk:
     line_end: int
     page: int | None = None
 
-    def to_dict(self):
+    def to_dict(self) -> ChunkData:
         """Retorna uma cópia dos campos do trecho em dicionário serializável."""
-        return asdict(self)
+        return cast(ChunkData, asdict(self))
 
 
 @dataclass(frozen=True)
@@ -93,7 +178,7 @@ class Hit:
     score: float
 
 
-def chunks_from_text(text, source, page=None):
+def chunks_from_text(text: str, source: str, page: int | None = None) -> list[Chunk]:
     """Segmenta texto por títulos e tamanho, preservando posição e identificação.
 
     Args:
@@ -115,10 +200,11 @@ def chunks_from_text(text, source, page=None):
         raise ValueError("Documento com texto muito longo. Limite: 150.000 caracteres por arquivo.")
     if not text.strip():
         return []
-    result, buffer = [], []
+    result: list[Chunk] = []
+    buffer: list[tuple[int, str]] = []
     title, section = Path(source).stem, "Conteúdo"
 
-    def flush():
+    def flush() -> None:
         """Emite o bloco acumulado quando há termos úteis e esvazia o buffer da seção."""
         if not buffer:
             return
@@ -148,7 +234,7 @@ def chunks_from_text(text, source, page=None):
     return result
 
 
-def ingest_bytes(name, payload):
+def ingest_bytes(name: str, payload: bytes) -> list[Chunk]:
     """Lê um documento em memória e converte seu texto em trechos rastreáveis.
 
     Args:
@@ -202,7 +288,7 @@ def ingest_bytes(name, payload):
         raise ValueError("Não foi possível ler o PDF. Confira se o arquivo é válido.") from error
 
 
-def demo_chunks():
+def demo_chunks() -> list[Chunk]:
     """Lê os Markdown da demonstração em ordem de nome e retorna seus trechos."""
     return [chunk for path in sorted(BASE_DIR.glob("*.md")) for chunk in ingest_bytes(path.name, path.read_bytes())]
 
@@ -214,7 +300,14 @@ class KnowledgeIndex:
     o corpus recebido. Escores TF-IDF, BM25 e RRF têm escalas diferentes.
     """
 
-    def __init__(self, chunks, retriever=None, embedder=_AUTO_EMBEDDER, reranker=None, crossencoder=_AUTO_RERANKER):
+    def __init__(
+        self,
+        chunks: Iterable[Chunk],
+        retriever: str | None = None,
+        embedder: Embedder | Literal[_AutoModel.EMBEDDER] | None = _AutoModel.EMBEDDER,
+        reranker: str | None = None,
+        crossencoder: CrossEncoder | Literal[_AutoModel.RERANKER] | None = _AutoModel.RERANKER,
+    ) -> None:
         """Prepara TF-IDF, BM25 e, se disponível, vetores locais do corpus.
 
         Args:
@@ -242,18 +335,18 @@ class KnowledgeIndex:
             strip_accents="unicode", ngram_range=(1, 2), stop_words=sorted(STOP_WORDS), max_features=20000
         )
         self.char = TfidfVectorizer(strip_accents="unicode", analyzer="char_wb", ngram_range=(3, 5), max_features=30000)
-        self.word_matrix = self.word.fit_transform(corpus)
-        self.char_matrix = self.char.fit_transform(corpus)
+        self.word_matrix = cast(csr_matrix, self.word.fit_transform(corpus))
+        self.char_matrix = cast(csr_matrix, self.char.fit_transform(corpus))
         self.requested_retriever = retriever or os.environ.get("DOCORA_RETRIEVER", "hybrid")
         self.requested_reranker = reranker or os.environ.get("DOCORA_RERANKER", "none")
         if self.requested_reranker not in {"none", "rules", "crossencoder"}:
             raise ValueError("Reranker inválido. Use none, rules ou crossencoder.")
         self.active_reranker = self.requested_reranker
-        self.reranker_fallback_reason = None
-        self.crossencoder = None
-        self.last_rerank_ms = 0
+        self.reranker_fallback_reason: str | None = None
+        self.crossencoder: CrossEncoder | None = None
+        self.last_rerank_ms: float = 0
         if self.requested_reranker == "crossencoder":
-            if crossencoder is _AUTO_RERANKER:
+            if crossencoder is _AutoModel.RERANKER:
                 from .crossencoder import load_crossencoder
 
                 crossencoder, self.reranker_fallback_reason = load_crossencoder()
@@ -266,16 +359,14 @@ class KnowledgeIndex:
         if self.requested_retriever not in {"tfidf", "bm25", "hybrid"}:
             raise ValueError("Recuperador inválido. Use tfidf, bm25 ou hybrid.")
         self.active_retriever = self.requested_retriever
-        self.fallback_reason = None
-        self.embedder = None
-        self.embeddings = None
-        self.bm25 = None
+        self.fallback_reason: str | None = None
+        self.embedder: Embedder | None = None
+        self.embeddings: NDArray[np.float32] | None = None
+        self.bm25: BM25 | None = None
         if self.requested_retriever in {"bm25", "hybrid"}:
-            from .ranking import BM25
-
             self.bm25 = BM25(corpus)
         if self.requested_retriever == "hybrid":
-            if embedder is _AUTO_EMBEDDER:
+            if embedder is _AutoModel.EMBEDDER:
                 from .embeddings import load_embedder
 
                 embedder, self.fallback_reason = load_embedder()
@@ -293,7 +384,7 @@ class KnowledgeIndex:
         self.build_ms = round((perf_counter() - started) * 1000, 2)
 
     @staticmethod
-    def _vectors(vectors, rows):
+    def _vectors(vectors: ArrayLike, rows: int) -> NDArray[np.float32]:
         """Valida e normaliza também encoders injetados nos testes."""
         vectors = np.asarray(vectors, dtype=np.float32)
         if vectors.ndim != 2 or vectors.shape[0] != rows or not vectors.shape[1] or not np.isfinite(vectors).all():
@@ -303,7 +394,7 @@ class KnowledgeIndex:
             raise ValueError("Embeddings vazios.")
         return vectors / norms
 
-    def search(self, question, top_k=3, min_score=None):
+    def search(self, question: str, top_k: int = 3, min_score: float | None = None) -> list[Hit]:
         """Aplica reranking ao top-10 após os filtros, antes do corte de saída."""
         if top_k < 1:
             raise ValueError("top_k deve ser positivo.")
@@ -319,7 +410,7 @@ class KnowledgeIndex:
         if self.active_reranker == "crossencoder":
             try:
                 passages = [f"{hit.chunk.title}\n{hit.chunk.section}\n{hit.chunk.text}" for hit in candidates[:TOP_N]]
-                scores = np.asarray(self.crossencoder.predict(question, passages), dtype=np.float32)
+                scores = np.asarray(cast(CrossEncoder, self.crossencoder).predict(question, passages), dtype=np.float32)
                 if scores.shape != (len(passages),) or not np.isfinite(scores).all():
                     raise ValueError("Escores inválidos do reranker.")
                 ordered = [candidates[int(i)] for i in np.argsort(-scores, kind="stable")]
@@ -335,7 +426,7 @@ class KnowledgeIndex:
         self.last_rerank_ms = round((perf_counter() - started) * 1000, 3)
         return (ordered + candidates[TOP_N:])[:top_k]
 
-    def _retrieve(self, question, top_k=3, min_score=None):
+    def _retrieve(self, question: str, top_k: int = 3, min_score: float | None = None) -> list[Hit]:
         """Busca com o recuperador ativo; falhas do encoder voltam ao TF-IDF.
 
         BM25 conserva os filtros lexicais do TF-IDF e muda a ordenação. O
@@ -352,33 +443,33 @@ class KnowledgeIndex:
 
         if self.active_retriever == "bm25":
             eligible = {hit.chunk.id for hit in self._search_tfidf(question, len(self.chunks), lexical_cut)}
-            scores = self.bm25.scores(expanded_query(question))
+            scores = cast(BM25, self.bm25).scores(expanded_query(question))
             return [
                 Hit(self.chunks[int(i)], round(float(scores[i]), 5))
                 for i in np.argsort(-scores, kind="stable")
                 if scores[i] > 0 and self.chunks[int(i)].id in eligible
             ][:top_k]
         try:
-            query = self._vectors(self.embedder.encode([question], query=True), 1)
-            semantic = (self.embeddings @ query.T).ravel()
+            query = self._vectors(cast(Embedder, self.embedder).encode([question], query=True), 1)
+            semantic = (cast(NDArray[np.float32], self.embeddings) @ query.T).ravel()
         except Exception as error:
             self.active_retriever = "tfidf"
             self.fallback_reason = f"Falha na consulta ao encoder ({type(error).__name__}); usando TF-IDF."
             self.embedder = self.embeddings = None
             return self._search_tfidf(question, top_k, lexical_cut)
-        eligible = {
+        semantic_eligible = {
             int(i)
             for i in range(len(self.chunks))
             if semantic[i] >= HYBRID_MIN_COSINE and semantic.max() - semantic[i] <= HYBRID_MAX_GAP
         }
-        dense_rank = [int(i) for i in np.argsort(-semantic, kind="stable")[:10] if int(i) in eligible]
-        lexical = self.bm25.scores(expanded_query(question))
+        dense_rank = [int(i) for i in np.argsort(-semantic, kind="stable")[:10] if int(i) in semantic_eligible]
+        lexical = cast(BM25, self.bm25).scores(expanded_query(question))
         sparse_rank = [
-            int(i) for i in np.argsort(-lexical, kind="stable")[:10] if lexical[i] > 0 and int(i) in eligible
+            int(i) for i in np.argsort(-lexical, kind="stable")[:10] if lexical[i] > 0 and int(i) in semantic_eligible
         ]
         return [Hit(self.chunks[i], round(score, 6)) for i, score in rrf([dense_rank, sparse_rank])[:top_k]]
 
-    def _search_tfidf(self, question, top_k=3, min_score=0.14):
+    def _search_tfidf(self, question: str, top_k: int = 3, min_score: float = 0.14) -> list[Hit]:
         """Classifica trechos por relação lexical e filtra evidências pouco relacionadas.
 
         Args:
@@ -396,8 +487,8 @@ class KnowledgeIndex:
         """
         query = expanded_query(question)
         query_terms = terms(query)
-        word_scores = (self.word_matrix @ self.word.transform([query]).T).toarray().ravel()
-        char_scores = (self.char_matrix @ self.char.transform([query]).T).toarray().ravel()
+        word_scores = (self.word_matrix @ cast(csr_matrix, self.word.transform([query])).T).toarray().ravel()
+        char_scores = (self.char_matrix @ cast(csr_matrix, self.char.transform([query])).T).toarray().ravel()
         # Caracteres ajudam em variações de escrita; palavras continuam dominando o ranking.
         scores = 0.8 * word_scores + 0.2 * char_scores
         hits = []

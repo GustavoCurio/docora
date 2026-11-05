@@ -1,15 +1,15 @@
 """Mede cortes no original e negativos de desenvolvimento; não lê held-out."""
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 import numpy as np
 
-from docora.embeddings import load_embedder, MODEL_REPO, MODEL_REVISION
-from docora.retrieval import demo_chunks, HYBRID_MIN_COSINE, HYBRID_MAX_GAP
+from docora.embeddings import MODEL_REPO, MODEL_REVISION, load_embedder
+from docora.retrieval import HYBRID_MAX_GAP, HYBRID_MIN_COSINE, demo_chunks
 
 
 def main():
@@ -34,11 +34,13 @@ def main():
                 "cut": cut,
                 "answerable_accepted": sum(
                     int(score >= cut)
-                    for case, score in zip(cases, maximum)
+                    for case, score in zip(cases, maximum, strict=False)
                     if case["expected_status"] == "evidence_found"
                 ),
                 "ood_accepted": sum(
-                    int(score >= cut) for case, score in zip(cases, maximum) if case["expected_status"] == "not_found"
+                    int(score >= cut)
+                    for case, score in zip(cases, maximum, strict=False)
+                    if case["expected_status"] == "not_found"
                 ),
             }
         )
@@ -50,7 +52,9 @@ def main():
         "selected_max_gap": HYBRID_MAX_GAP,
         "selection_rule": "Maior corte da grade que preserva os 20 positivos originais. Negativos de desenvolvimento medem o custo em falsos positivos. Janela fixa de 0,03 para limitar a cauda antes de RRF.",
         "sweep": sweep,
-        "results": [{**case, "max_cosine": round(float(score), 6)} for case, score in zip(cases, maximum)],
+        "results": [
+            {**case, "max_cosine": round(float(score), 6)} for case, score in zip(cases, maximum, strict=False)
+        ],
     }
     print(json.dumps(result, ensure_ascii=False, indent=2))
 

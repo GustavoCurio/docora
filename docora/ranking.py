@@ -1,9 +1,13 @@
 """BM25 e fusão por posição, sem dependências de modelos ou rede."""
 
-from collections import Counter
+from __future__ import annotations
+
 import math
+from collections import Counter
+from collections.abc import Hashable, Iterable, Sequence
 
 import numpy as np
+from numpy.typing import NDArray
 
 from .textnorm import tokenize
 
@@ -11,7 +15,7 @@ from .textnorm import tokenize
 class BM25:
     """BM25 Okapi com IDF positivo e parâmetros usuais k1=1,5 e b=0,75."""
 
-    def __init__(self, corpus, k1=1.5, b=0.75):
+    def __init__(self, corpus: Sequence[str], k1: float = 1.5, b: float = 0.75) -> None:
         self.documents = [Counter(tokenize(text)) for text in corpus]
         self.lengths = np.asarray([sum(doc.values()) for doc in self.documents], dtype=np.float64)
         self.average_length = max(float(self.lengths.mean()) if len(self.lengths) else 1.0, 1.0)
@@ -21,7 +25,7 @@ class BM25:
         }
         self.k1, self.b = k1, b
 
-    def scores(self, question):
+    def scores(self, question: str) -> NDArray[np.float64]:
         """Soma IDF × saturação TF; termos repetidos da consulta contam uma vez."""
         result = np.zeros(len(self.documents), dtype=np.float64)
         for token in set(tokenize(question)):
@@ -31,7 +35,7 @@ class BM25:
         return result
 
 
-def rrf(rankings, k=60):
+def rrf[T: Hashable](rankings: Iterable[Iterable[T]], k: int = 60) -> list[tuple[T, float]]:
     """Soma 1/(k+posição) por lista; empates preservam a primeira aparição.
 
     Posições começam em um. Duplicatas numa mesma lista não somam duas vezes.
@@ -39,7 +43,7 @@ def rrf(rankings, k=60):
     """
     if k < 0:
         raise ValueError("A constante RRF deve ser não negativa.")
-    scores = {}
+    scores: dict[T, float] = {}
     for ranking in rankings:
         for position, item in enumerate(dict.fromkeys(ranking), 1):
             scores[item] = scores.get(item, 0) + 1 / (k + position)

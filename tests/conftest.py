@@ -10,7 +10,8 @@ from fastapi.testclient import TestClient
 from streamlit.errors import StreamlitSecretNotFoundError
 from streamlit.testing.v1 import AppTest
 
-from docora.api import app, index as api_index
+from docora.api import app
+from docora.api import index as api_index
 from docora.crossencoder import load_crossencoder
 from docora.embeddings import load_embedder
 from docora.retrieval import KnowledgeIndex, demo_chunks

@@ -1,10 +1,10 @@
 """Docora: conversa com documentos e fontes ao lado das respostas."""
 
-from hashlib import sha256
 import json
 import os
-from pathlib import Path
 import sys
+from hashlib import sha256
+from pathlib import Path
 
 # Prioriza o pacote deste repositório no Streamlit Community Cloud.
 _REPO_ROOT = Path(__file__).resolve().parent
@@ -300,22 +300,21 @@ with sources_slot:
             "docora-consulta.json",
             mime="application/json",
         )
-with references:
-    with st.expander("Sobre esta consulta"):
-        st.write(
-            "A busca pode usar TF-IDF, BM25 ou combinar BM25 com vetores de um modelo multilíngue local. Recupera até três fontes. O modo local reproduz os trechos; a síntese com IA redige uma resposta e valida seus identificadores de referência."
+with references, st.expander("Sobre esta consulta"):
+    st.write(
+        "A busca pode usar TF-IDF, BM25 ou combinar BM25 com vetores de um modelo multilíngue local. Recupera até três fontes. O modo local reproduz os trechos; a síntese com IA redige uma resposta e valida seus identificadores de referência."
+    )
+    st.write(
+        "Perguntas sem evidência recebem uma mensagem de ausência de informação. O assistente não acessa pedidos individuais. PDFs digitalizados precisam de OCR antes do envio."
+    )
+    active = index.active_retriever if index else "tfidf"
+    report_path = _REPO_ROOT / (
+        f"reports/{active}_original.json" if active != "tfidf" else "reports/baseline_tfidf_original.json"
+    )
+    if report_path.exists():
+        report = json.loads(report_path.read_text("utf-8"))
+        st.caption(
+            f"Referência original · {retriever_names[active]}: {report['total']} perguntas avaliadas · {report['pass_rate_pct']:.1f}% dos critérios atendidos. Avaliação local; não mede generalização nem um LLM externo."
         )
-        st.write(
-            "Perguntas sem evidência recebem uma mensagem de ausência de informação. O assistente não acessa pedidos individuais. PDFs digitalizados precisam de OCR antes do envio."
-        )
-        active = index.active_retriever if index else "tfidf"
-        report_path = _REPO_ROOT / (
-            f"reports/{active}_original.json" if active != "tfidf" else "reports/baseline_tfidf_original.json"
-        )
-        if report_path.exists():
-            report = json.loads(report_path.read_text("utf-8"))
-            st.caption(
-                f"Referência original · {retriever_names[active]}: {report['total']} perguntas avaliadas · {report['pass_rate_pct']:.1f}% dos critérios atendidos. Avaliação local; não mede generalização nem um LLM externo."
-            )
-        st.caption("API: /health, /sources e /ask. Documentação em /docs.")
-        st.link_button("Projeto no GitHub", "https://github.com/GustavoCurio/docora")
+    st.caption("API: /health, /sources e /ask. Documentação em /docs.")
+    st.link_button("Projeto no GitHub", "https://github.com/GustavoCurio/docora")
