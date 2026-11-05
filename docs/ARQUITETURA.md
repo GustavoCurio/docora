@@ -56,7 +56,7 @@ threads e arena de memória desativada; não há dependência de Torch.
 
 ## Resposta e citações
 
-No modo extrativo, a aplicação reproduz os trechos recuperados. O status evidence_found significa que há evidência textual relacionada; não garante que todos os detalhes da pergunta estejam respondidos.
+No modo extrativo, a aplicação segmenta os três trechos recuperados em sentenças (pontuação e linhas; preserva decimais e abreviações usuais). A seleção lexical usa overlap com a pergunta expandida, seção e prioridade do ranking, sem carregar outro encoder. Reserva uma sentença por fonte, preenche com sentenças com overlap e remove duplicatas por Jaccard ≥0,85 ou semelhança textual ≥0,92. A resposta contém até seis sentenças e 120 palavras, preserva a posição dentro de cada trecho e inclui `[Fn]` em cada sentença. Sentenças acima do orçamento são omitidas inteiras; se nenhuma couber, retorna `not_found`. Só fontes efetivamente citadas permanecem na resposta. O status evidence_found significa que há evidência textual relacionada; não garante que todos os detalhes da pergunta estejam respondidos.
 
 No modo generativo, a pergunta e até três trechos são enviados à Responses API com instruções para usar exclusivamente as evidências. A saída estruturada contém answer, answerable e citations. Identificadores ausentes, citações inexistentes e divergências entre marcadores no texto e lista de fontes invalidam a resposta.
 

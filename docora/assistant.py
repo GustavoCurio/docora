@@ -74,7 +74,7 @@ def answer_question(question, index: KnowledgeIndex, mode="extractive", client=N
     Args:
         question: Pergunta com conteúdo e até 1.500 caracteres após strip.
         index: KnowledgeIndex da biblioteca escolhida para esta consulta.
-        mode: extractive reproduz trechos; generative usa o provedor externo.
+        mode: extractive seleciona sentenças; generative usa o provedor externo.
         client: Cliente compatível com responses.create, inclusive cliente de teste.
         model: Modelo explícito ou, se ausente, OPENAI_MODEL.
         api_key: Chave explícita do servidor ou, se ausente, OPENAI_API_KEY.
@@ -112,8 +112,13 @@ def answer_question(question, index: KnowledgeIndex, mode="extractive", client=N
     sources = [{"reference": f"F{number}", "score": hit.score, **hit.chunk.to_dict()}
                for number, hit in enumerate(hits, 1)]
     if mode == "extractive":
-        passages = [f"**{source['section']}** [{source['reference']}]\n\n{source['text']}" for source in sources]
-        return result("evidence_found", "Encontrei estas informações nos documentos:\n\n" + "\n\n---\n\n".join(passages), sources)
+        from .extractive import select_sentences
+        selected = select_sentences(question, sources)
+        if not selected:
+            return result("not_found", "Não encontrei uma sentença adequada dentro do limite de resposta. Consulte os documentos ou o atendimento humano.")
+        cited = {reference for _, reference in selected}
+        message = "\n\n".join(f"{sentence} [{reference}]" for sentence, reference in selected)
+        return result("evidence_found", message, [s for s in sources if s["reference"] in cited])
     selected_model = model or os.environ.get("OPENAI_MODEL", "")
     if not selected_model:
         raise ValueError("Configure OPENAI_MODEL para ativar a síntese generativa.")
