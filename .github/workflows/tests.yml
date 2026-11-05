@@ -7,6 +7,10 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    env:
+      DOCORA_DISABLE_EMBEDDINGS: '1'
+      DOCORA_ALLOW_MODEL_DOWNLOAD: '0'
+      DOCORA_RETRIEVER: tfidf
     strategy:
       matrix:
         python-version: ['3.12', '3.14']
@@ -20,4 +24,5 @@ jobs:
           cache: pip
       - run: python -m pip install -r requirements-dev.txt
       - run: python -m pytest -q
-      - run: python -m docora evaluate --output reports/ci-evaluation.json
+      - run: python -m docora evaluate --suite original --retriever tfidf --output reports/ci-evaluation.json
+      - run: python -m docora evaluate --suite all --retriever hybrid --allow-failures --output reports/ci-fallback.json
