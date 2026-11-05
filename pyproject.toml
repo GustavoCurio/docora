@@ -42,5 +42,6 @@ source = ["docora"]
 branch = true
 
 [tool.coverage.report]
+fail_under = 90.0  # Suíte rápida medida em Python 3.12: 90,41% de linhas e ramos.
 show_missing = true
 precision = 2
