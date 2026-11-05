@@ -1,6 +1,5 @@
 """Integração optativa: exige encoder já disponível no cache local."""
 import json
-from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
@@ -12,7 +11,8 @@ from docora.retrieval import KnowledgeIndex, demo_chunks
 
 
 @pytest.mark.slow
-def test_real_model_on_both_suites_and_streamlit_without_key(monkeypatch, tmp_path):
+@pytest.mark.model
+def test_real_model_on_both_suites_and_streamlit_without_key(monkeypatch, tmp_path, project_root):
     import streamlit as st
     from streamlit.testing.v1 import AppTest
 
@@ -28,7 +28,7 @@ def test_real_model_on_both_suites_and_streamlit_without_key(monkeypatch, tmp_pa
     # uma suposta execução real com skip ou retorno silencioso ao TF-IDF.
     assert model is not None, reason
     index = KnowledgeIndex(demo_chunks(), retriever="hybrid", embedder=model)
-    root = Path(__file__).resolve().parents[1]
+    root = project_root
     for suite, file in [("original", "questions.json"), ("heldout", "heldout_questions.json")]:
         report = evaluate(json.loads((root / "evals" / file).read_text()), index, suite)
         assert report["retriever_active"] == "hybrid"

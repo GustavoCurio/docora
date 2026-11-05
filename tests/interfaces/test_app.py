@@ -1,11 +1,7 @@
-from pathlib import Path
-from streamlit.testing.v1 import AppTest
-ROOT = Path(__file__).resolve().parents[1]
-
-def test_demo_question_and_source_evidence(monkeypatch):
+def test_demo_question_and_source_evidence(monkeypatch, start_app):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_MODEL", raising=False)
-    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60).run()
+    app = start_app()
     assert not app.exception
     assert len(app.metric) == 0
     next(b for b in app.button if b.key == "Prazo de entrega").click().run()
@@ -20,10 +16,10 @@ def test_demo_question_and_source_evidence(monkeypatch):
     assert not app.exception
     assert len(app.chat_message) == 0
 
-def test_provider_configuration_and_empty_upload_base(monkeypatch):
+def test_provider_configuration_and_empty_upload_base(monkeypatch, start_app):
     monkeypatch.delenv("OPENAI_API_KEY", raising=False)
     monkeypatch.delenv("OPENAI_MODEL", raising=False)
-    app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60).run()
+    app = start_app()
     assert not app.exception
     assert not any(r.label == "Formato da resposta" for r in app.radio)
     assert not app.chat_input[0].disabled

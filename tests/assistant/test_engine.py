@@ -1,24 +1,15 @@
 from io import BytesIO
 import json
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
 
 from docora.assistant import ProviderError, answer_question
-from docora.retrieval import KnowledgeIndex, MAX_BYTES, chunks_from_text, demo_chunks, ingest_bytes
+from docora.retrieval import KnowledgeIndex, MAX_BYTES, chunks_from_text, ingest_bytes
 
-CASES = json.loads((Path(__file__).resolve().parents[1] / "evals/questions.json").read_text(encoding="utf-8"))
-
-
-@pytest.fixture(scope="module")
-def index():
-    return KnowledgeIndex(demo_chunks())
-
-
-@pytest.mark.parametrize("case", CASES, ids=[case["question"] for case in CASES])
-def test_reference_questions(case, index):
+def test_reference_questions(reference_case, index):
+    case = reference_case
     result = answer_question(case["question"], index)
     assert result.status == case["expected_status"]
     if case.get("source"):

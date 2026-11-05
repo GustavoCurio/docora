@@ -2,36 +2,16 @@
 
 import json
 import os
-from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
 
 import pytest
 import streamlit as st
-from streamlit.errors import StreamlitSecretNotFoundError
-from streamlit.testing.v1 import AppTest
 
-ROOT = Path(__file__).resolve().parents[1]
+pytestmark = [pytest.mark.cloud, pytest.mark.usefixtures("cloud_without_credentials")]
 
 
-@pytest.fixture(autouse=True)
-def cloud_without_credentials(monkeypatch):
-    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
-    monkeypatch.delenv("OPENAI_MODEL", raising=False)
-    # Reproduz o acesso aos segredos quando nenhum arquivo está configurado.
-    missing_secrets = Mock()
-    missing_secrets.get.side_effect = StreamlitSecretNotFoundError("Nenhum segredo configurado")
-    monkeypatch.setattr(st, "secrets", missing_secrets)
-    factory = Mock(side_effect=AssertionError("Cliente externo não autorizado neste teste"))
-    monkeypatch.setattr("openai.OpenAI", factory)
-    return factory
-
-
-def start_app():
-    return AppTest.from_file(str(ROOT / "app.py"), default_timeout=60).run()
-
-
-def test_cloud_demo_without_environment_or_secrets(cloud_without_credentials):
+def test_cloud_demo_without_environment_or_secrets(cloud_without_credentials, start_app):
     app = start_app()
     assert not app.exception
     assert not app.error
@@ -49,7 +29,7 @@ def test_cloud_demo_without_environment_or_secrets(cloud_without_credentials):
     cloud_without_credentials.assert_not_called()
 
 
-def test_load_example_is_idempotent_and_preserves_demo_history():
+def test_load_example_is_idempotent_and_preserves_demo_history(start_app):
     app = start_app()
     app.button(key="Prazo de entrega").click().run()
     history = app.session_state["history"][:]
@@ -71,7 +51,7 @@ def test_load_example_is_idempotent_and_preserves_demo_history():
 
 
 @pytest.mark.parametrize("configuration", ["ambiente", "segredos", "ambiente_prioritario"])
-def test_optional_generation_receives_server_settings_and_requires_consent(monkeypatch, configuration):
+def test_optional_generation_receives_server_settings_and_requires_consent(monkeypatch, configuration, start_app):
     if configuration in {"ambiente", "ambiente_prioritario"}:
         monkeypatch.setenv("OPENAI_API_KEY", "chave-ficticia-ambiente")
         monkeypatch.setenv("OPENAI_MODEL", "modelo-ficticio-ambiente")
@@ -107,7 +87,7 @@ def test_optional_generation_receives_server_settings_and_requires_consent(monke
     assert create.call_args.kwargs["store"] is False
 
 
-def test_key_without_model_keeps_extractive_default_and_blocks_generation(monkeypatch, cloud_without_credentials):
+def test_key_without_model_keeps_extractive_default_and_blocks_generation(monkeypatch, cloud_without_credentials, start_app):
     monkeypatch.setenv("OPENAI_API_KEY", "chave-ficticia")
     app = start_app()
     assert not app.exception
@@ -119,10 +99,10 @@ def test_key_without_model_keeps_extractive_default_and_blocks_generation(monkey
     cloud_without_credentials.assert_not_called()
 
 
-def test_evaluation_default_output_uses_temporary_directory(monkeypatch, tmp_path):
+def test_evaluation_default_output_uses_temporary_directory(monkeypatch, tmp_path, project_root):
     import docora.__main__ as cli
 
-    original_report = (ROOT / "reports/evaluation.json").read_bytes()
+    original_report = (project_root / "reports/evaluation.json").read_bytes()
     monkeypatch.setattr(cli.tempfile, "gettempdir", lambda: str(tmp_path))
     monkeypatch.setattr("sys.argv", ["docora", "evaluate"])
     with pytest.raises(SystemExit) as result:
@@ -130,10 +110,10 @@ def test_evaluation_default_output_uses_temporary_directory(monkeypatch, tmp_pat
     assert result.value.code == 0
     report = json.loads((tmp_path / "docora/evaluation.json").read_text("utf-8"))
     assert report["passed"] == report["total"] == 28
-    assert (ROOT / "reports/evaluation.json").read_bytes() == original_report
+    assert (project_root / "reports/evaluation.json").read_bytes() == original_report
 
 
-def test_hybrid_without_encoder_displays_fallback_and_answers(cloud_without_credentials):
+def test_hybrid_without_encoder_displays_fallback_and_answers(cloud_without_credentials, start_app):
     app = start_app()
     app.selectbox(key="retriever").set_value("hybrid").run()
     assert not app.exception

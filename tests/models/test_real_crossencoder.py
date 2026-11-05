@@ -1,6 +1,5 @@
 """Integração optativa ONNX; exige ambos os modelos já presentes no cache."""
 import json
-from pathlib import Path
 
 import pytest
 
@@ -12,7 +11,8 @@ from docora.retrieval import KnowledgeIndex, demo_chunks
 
 
 @pytest.mark.slow
-def test_real_crossencoder_both_suites(monkeypatch, tmp_path):
+@pytest.mark.model
+def test_real_crossencoder_both_suites(monkeypatch, tmp_path, project_root):
     monkeypatch.delenv("DOCORA_DISABLE_EMBEDDINGS")
     monkeypatch.delenv("DOCORA_DISABLE_RERANKER")
     load_crossencoder.cache_clear()
@@ -21,7 +21,7 @@ def test_real_crossencoder_both_suites(monkeypatch, tmp_path):
         index = KnowledgeIndex(demo_chunks(), retriever="hybrid", reranker="crossencoder")
         assert index.active_retriever == "hybrid", index.fallback_reason
         assert index.active_reranker == "crossencoder", index.reranker_fallback_reason
-        root = Path(__file__).resolve().parents[1]
+        root = project_root
         for suite, file in [("original", "questions.json"), ("heldout", "heldout_questions.json")]:
             report = evaluate(json.loads((root / "evals" / file).read_text()), index, suite)
             assert report["faithfulness_pct"] == 100

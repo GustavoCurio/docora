@@ -11,13 +11,6 @@ from docora.assistant import answer_question
 from docora.retrieval import Hit, KnowledgeIndex, chunks_from_text, demo_chunks
 
 
-@pytest.fixture(autouse=True)
-def clear_loader_cache():
-    ce.load_crossencoder.cache_clear()
-    yield
-    ce.load_crossencoder.cache_clear()
-
-
 @pytest.mark.parametrize("allowed", [False, True])
 def test_download_gate_and_shared_loader(allowed, monkeypatch, tmp_path):
     monkeypatch.delenv("DOCORA_DISABLE_RERANKER")
