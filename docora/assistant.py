@@ -113,7 +113,7 @@ def answer_question(question, index: KnowledgeIndex, mode="extractive", client=N
                for number, hit in enumerate(hits, 1)]
     if mode == "extractive":
         from .extractive import select_sentences
-        selected = select_sentences(question, sources)
+        selected = select_sentences(question, sources, embedder=getattr(index, "embedder", None))
         if not selected:
             return result("not_found", "Não encontrei uma sentença adequada dentro do limite de resposta. Consulte os documentos ou o atendimento humano.")
         cited = {reference for _, reference in selected}

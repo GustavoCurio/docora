@@ -27,6 +27,8 @@ def test_deduplication_budget_and_position():
     assert positions == sorted(positions)
     assert near_duplicate(repeated, "A entrega acontece em cinco dias úteis!")
     assert not near_duplicate(repeated, "O pagamento aceita cartão de crédito.")
+    assert not near_duplicate("A entrega leva 5 dias úteis.", "A entrega leva 8 dias úteis.")
+    assert not near_duplicate("A caneca pode ir ao micro-ondas.", "A caneca não pode ir ao micro-ondas.")
 
 
 def test_each_sentence_cites_its_actual_chunk_and_avoids_unused_sources():
@@ -52,3 +54,14 @@ def test_guard_and_abstention_do_not_select_sentences():
 
 def test_oversized_sentence_is_never_truncated_into_an_unsupported_claim():
     assert select_sentences("entrega", [{"reference": "F1", "section": "Entrega", "text": "entrega " * 121}]) == []
+
+
+def test_available_encoder_selects_paraphrase_and_failure_keeps_lexical_fallback():
+    from unittest.mock import Mock
+    import numpy as np
+    sources = [{"reference": "F1", "section": "Entrega", "text": "Atendemos a região de São Paulo. O prazo é de cinco dias úteis."}]
+    model = Mock()
+    model.encode.side_effect = [np.array([[0, 1], [1, 0]]), np.array([[1, 0]])]
+    assert select_sentences("Quando recebo?", sources, model) == [("O prazo é de cinco dias úteis.", "F1")]
+    model.encode.side_effect = MemoryError("Falha simulada")
+    assert select_sentences("Quando recebo?", sources, model) == select_sentences("Quando recebo?", sources)
