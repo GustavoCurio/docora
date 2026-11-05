@@ -1,0 +1,10 @@
+[
+  {"question":"Como configuro o Wi-Fi do roteador?","expected_status":"not_found"},
+  {"question":"Qual o prazo de aprovação do financiamento imobiliário?","expected_status":"not_found"},
+  {"question":"A loja faz revisão de motos?","expected_status":"not_found"},
+  {"question":"Como funciona o desconto do seguro de carro?","expected_status":"not_found"},
+  {"question":"Minha geladeira está na garantia da fabricante?","expected_status":"not_found"},
+  {"question":"O parcelamento da matrícula escolar tem juros?","expected_status":"not_found"},
+  {"question":"Como devolver livros à biblioteca municipal?","expected_status":"not_found"},
+  {"question":"Vocês emitem certidão de nascimento?","expected_status":"not_found"}
+]

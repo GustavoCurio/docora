@@ -9,6 +9,13 @@ não é uma amostra independente de clientes. Não usar esse arquivo para ajusta
 aliases, pesos ou cortes. Depois de examinar resultados, não há garantia de
 independência de futuras decisões: novos experimentos exigem outro conjunto.
 
+`development_questions.json` contém oito negativos adicionais, separados do
+held-out, para calibrar o corte semântico junto ao conjunto original.
+`scripts/calibrate_retrieval.py` lê **somente** esses dois arquivos e registra a
+grade de cortes em `reports/calibration_development.json`. O corte 0,85 e a janela
+fixa de 0,03 foram congelados antes da avaliação híbrida no held-out. Os aliases
+TF-IDF e o corpus permanecem os mesmos do baseline.
+
 O contrato está em `questions.schema.json` (JSON Schema 2020-12). Cada caso tem
 `question` e `expected_status`; `id` é opcional. Casos `evidence_found` declaram
 `source` e `section`, ou `acceptable_sources`, uma lista de pares equivalentes

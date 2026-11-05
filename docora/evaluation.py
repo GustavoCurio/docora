@@ -77,6 +77,7 @@ def evaluate(cases, index, suite="original"):
         supported += support["supported_sentences"]
         sentences += support["sentences"]
         results.append({**case, "actual_status": answer.status,
+                        "retriever_active": getattr(index, "active_retriever", "tfidf"),
                         "pass": answer.status == case["expected_status"] and source_ok,
                         "first_relevant_rank": first,
                         "retrieved_sections": [s["section"] for s in answer.sources],
@@ -91,11 +92,19 @@ def evaluate(cases, index, suite="original"):
     def percent(numerator, denominator):
         return round(100 * numerator / denominator, 2) if denominator else None
 
+    metadata = {}
+    if getattr(index, "active_retriever", "tfidf") == "hybrid":
+        from .embeddings import MODEL_REPO, MODEL_REVISION
+        from .retrieval import HYBRID_MIN_COSINE, HYBRID_MAX_GAP
+        metadata = {"embedding_model": MODEL_REPO, "model_revision": MODEL_REVISION,
+                    "min_cosine": HYBRID_MIN_COSINE, "max_cosine_gap": HYBRID_MAX_GAP, "rrf_k": 60}
     return {
         "executed_utc": datetime.now(timezone.utc).isoformat(), "mode": "extractive", "suite": suite,
         "retriever_requested": getattr(index, "requested_retriever", "tfidf"),
         "retriever_active": getattr(index, "active_retriever", "tfidf"),
         "fallback_reason": getattr(index, "fallback_reason", None),
+        "retrieval_parameters": metadata,
+        "index_build_ms": getattr(index, "build_ms", None),
         "cases_sha256": sha256(json.dumps(cases, ensure_ascii=False, sort_keys=True).encode()).hexdigest(),
         "corpus_sha256": sha256(json.dumps([c.to_dict() for c in index.chunks], ensure_ascii=False, sort_keys=True).encode()).hexdigest(),
         "total": len(cases), "answerable": answerable, "ood": ood,

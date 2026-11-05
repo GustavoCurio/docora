@@ -1,10 +1,12 @@
-"""Ingestão de documentos e recuperação lexical por palavras e caracteres."""
+"""Ingestão e índices locais TF-IDF, BM25 e híbrido com RRF."""
 from dataclasses import asdict, dataclass
 from hashlib import sha256
 from io import BytesIO
 from pathlib import Path
 import re
+import os
 import unicodedata
+from time import perf_counter
 
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -23,6 +25,10 @@ ALIASES = {
     "lavar": "lavagem limpeza conservacao", "tamanho": "medidas capacidade",
     "cancelar": "cancelamento", "falar": "contato atendimento",
 }
+_AUTO_EMBEDDER = object()
+# Calibrados somente em questions.json + development_questions.json.
+HYBRID_MIN_COSINE = 0.85
+HYBRID_MAX_GAP = 0.03
 
 
 def normalize(text):
@@ -65,7 +71,7 @@ class Chunk:
 
 @dataclass(frozen=True)
 class Hit:
-    """Trecho recuperado com seu escore lexical; o escore não é confiança calibrada."""
+    """Trecho e escore do recuperador ativo; não é confiança calibrada."""
     chunk: Chunk
     score: float
 
@@ -180,16 +186,18 @@ def demo_chunks():
 
 
 class KnowledgeIndex:
-    """Índice em memória com ranking lexical de palavras e caracteres.
+    """Índice em memória com seleção de recuperador e fallback lexical.
 
     A base é deduplicada pelo ID do trecho e os vetorizadores aprendem apenas
-    o corpus recebido. Os escores medem relação lexical com a pergunta.
+    o corpus recebido. Escores TF-IDF, BM25 e RRF têm escalas diferentes.
     """
-    def __init__(self, chunks):
-        """Prepara os dois vetorizadores e as matrizes TF-IDF da biblioteca.
+    def __init__(self, chunks, retriever=None, embedder=_AUTO_EMBEDDER):
+        """Prepara TF-IDF, BM25 e, se disponível, vetores locais do corpus.
 
         Args:
             chunks: Trechos a indexar; IDs repetidos conservam a última ocorrência.
+            retriever: tfidf, bm25 ou hybrid; None consulta DOCORA_RETRIEVER.
+            embedder: Encoder injetável com encode; None força fallback lexical.
 
         Raises:
             ValueError: A base fica vazia, supera 600 trechos/300.000 caracteres
@@ -197,6 +205,7 @@ class KnowledgeIndex:
 
         As matrizes permanecem nesta instância; nenhuma fonte é enviada à rede.
         """
+        started = perf_counter()
         unique = {chunk.id: chunk for chunk in chunks}
         self.chunks = list(unique.values())
         if not self.chunks:
@@ -208,8 +217,78 @@ class KnowledgeIndex:
         self.char = TfidfVectorizer(strip_accents="unicode", analyzer="char_wb", ngram_range=(3, 5), max_features=30000)
         self.word_matrix = self.word.fit_transform(corpus)
         self.char_matrix = self.char.fit_transform(corpus)
+        self.requested_retriever = retriever or os.environ.get("DOCORA_RETRIEVER", "hybrid")
+        if self.requested_retriever not in {"tfidf", "bm25", "hybrid"}:
+            raise ValueError("Recuperador inválido. Use tfidf, bm25 ou hybrid.")
+        self.active_retriever = self.requested_retriever
+        self.fallback_reason = None
+        self.embedder = None
+        self.embeddings = None
+        self.bm25 = None
+        if self.requested_retriever in {"bm25", "hybrid"}:
+            from .ranking import BM25
+            self.bm25 = BM25(corpus)
+        if self.requested_retriever == "hybrid":
+            if embedder is _AUTO_EMBEDDER:
+                from .embeddings import load_embedder
+                embedder, self.fallback_reason = load_embedder()
+            if embedder is not None:
+                try:
+                    self.embeddings = self._vectors(embedder.encode(corpus), len(corpus))
+                    self.embedder = embedder
+                except Exception as error:
+                    self.fallback_reason = f"Não foi possível indexar com embeddings ({type(error).__name__}); usando TF-IDF."
+            if self.embedder is None:
+                self.active_retriever = "tfidf"
+                self.fallback_reason = self.fallback_reason or "Encoder local indisponível; usando TF-IDF."
+        self.build_ms = round((perf_counter() - started) * 1000, 2)
 
-    def search(self, question, top_k=3, min_score=0.14):
+    @staticmethod
+    def _vectors(vectors, rows):
+        """Valida e normaliza também encoders injetados nos testes."""
+        vectors = np.asarray(vectors, dtype=np.float32)
+        if vectors.ndim != 2 or vectors.shape[0] != rows or not vectors.shape[1] or not np.isfinite(vectors).all():
+            raise ValueError("Embeddings inválidos.")
+        norms = np.linalg.norm(vectors, axis=1, keepdims=True)
+        if (norms < 1e-12).any():
+            raise ValueError("Embeddings vazios.")
+        return vectors / norms
+
+    def search(self, question, top_k=3, min_score=None):
+        """Busca com o recuperador ativo; falhas do encoder voltam ao TF-IDF.
+
+        BM25 conserva os filtros lexicais do TF-IDF e muda a ordenação. O
+        híbrido filtra por cosseno absoluto e distância do melhor candidato
+        antes de fundir BM25 e embeddings por RRF. O corte RRF nunca decide
+        se existe evidência. min_score sobrescreve apenas o corte lexical.
+        """
+        if top_k < 1:
+            raise ValueError("top_k deve ser positivo.")
+        lexical_cut = 0.14 if min_score is None else min_score
+        if self.active_retriever == "tfidf":
+            return self._search_tfidf(question, top_k, lexical_cut)
+        from .ranking import rrf
+        if self.active_retriever == "bm25":
+            eligible = {hit.chunk.id for hit in self._search_tfidf(question, len(self.chunks), lexical_cut)}
+            scores = self.bm25.scores(expanded_query(question))
+            return [Hit(self.chunks[int(i)], round(float(scores[i]), 5))
+                    for i in np.argsort(-scores, kind="stable") if scores[i] > 0 and self.chunks[int(i)].id in eligible][:top_k]
+        try:
+            query = self._vectors(self.embedder.encode([question], query=True), 1)
+            semantic = (self.embeddings @ query.T).ravel()
+        except Exception as error:
+            self.active_retriever = "tfidf"
+            self.fallback_reason = f"Falha na consulta ao encoder ({type(error).__name__}); usando TF-IDF."
+            self.embedder = self.embeddings = None
+            return self._search_tfidf(question, top_k, lexical_cut)
+        eligible = {int(i) for i in range(len(self.chunks))
+                    if semantic[i] >= HYBRID_MIN_COSINE and semantic.max() - semantic[i] <= HYBRID_MAX_GAP}
+        dense_rank = [int(i) for i in np.argsort(-semantic, kind="stable")[:10] if int(i) in eligible]
+        lexical = self.bm25.scores(expanded_query(question))
+        sparse_rank = [int(i) for i in np.argsort(-lexical, kind="stable")[:10] if lexical[i] > 0 and int(i) in eligible]
+        return [Hit(self.chunks[i], round(score, 6)) for i, score in rrf([dense_rank, sparse_rank])[:top_k]]
+
+    def _search_tfidf(self, question, top_k=3, min_score=0.14):
         """Classifica trechos por relação lexical e filtra evidências pouco relacionadas.
 
         Args:

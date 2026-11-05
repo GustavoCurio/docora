@@ -27,7 +27,7 @@ class AskRequest(BaseModel):
 @app.get("/health")
 def health():
     """Retorna disponibilidade e número de trechos, inicializando a base se necessário."""
-    return {"status": "ok", "chunks": len(index().chunks)}
+    return {"status": "ok", "chunks": len(index().chunks), "retriever_active": index().active_retriever}
 
 
 @app.get("/sources")

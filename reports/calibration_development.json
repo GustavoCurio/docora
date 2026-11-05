@@ -1,0 +1,252 @@
+{
+  "model": "Xenova/multilingual-e5-small",
+  "revision": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+  "scope": "Somente original e negativos de desenvolvimento; nenhum acesso ao held-out.",
+  "selected_min_cosine": 0.85,
+  "selected_max_gap": 0.03,
+  "selection_rule": "Menor corte da grade que rejeita todos os negativos de desenvolvimento/original, preservando os 20 positivos originais. Janela fixa de 0,03 para limitar a cauda antes de RRF.",
+  "sweep": [
+    {
+      "cut": 0.82,
+      "answerable_accepted": 20,
+      "ood_accepted": 9
+    },
+    {
+      "cut": 0.83,
+      "answerable_accepted": 20,
+      "ood_accepted": 6
+    },
+    {
+      "cut": 0.84,
+      "answerable_accepted": 20,
+      "ood_accepted": 3
+    },
+    {
+      "cut": 0.85,
+      "answerable_accepted": 20,
+      "ood_accepted": 1
+    },
+    {
+      "cut": 0.86,
+      "answerable_accepted": 19,
+      "ood_accepted": 0
+    },
+    {
+      "cut": 0.87,
+      "answerable_accepted": 17,
+      "ood_accepted": 0
+    },
+    {
+      "cut": 0.88,
+      "answerable_accepted": 17,
+      "ood_accepted": 0
+    }
+  ],
+  "results": [
+    {
+      "question": "Qual é o prazo de entrega para São Paulo?",
+      "expected_status": "evidence_found",
+      "source": "entregas.md",
+      "section": "Regiões atendidas e prazo de entrega",
+      "max_cosine": 0.892467
+    },
+    {
+      "question": "Quanto demora para chegar em Minas Gerais?",
+      "expected_status": "evidence_found",
+      "source": "entregas.md",
+      "section": "Regiões atendidas e prazo de entrega",
+      "max_cosine": 0.850396
+    },
+    {
+      "question": "Vocês entregam no Rio de Janeiro?",
+      "expected_status": "evidence_found",
+      "source": "entregas.md",
+      "section": "Regiões atendidas e prazo de entrega",
+      "max_cosine": 0.862883
+    },
+    {
+      "question": "Como funciona o frete grátis?",
+      "expected_status": "evidence_found",
+      "source": "entregas.md",
+      "section": "Frete grátis",
+      "max_cosine": 0.892563
+    },
+    {
+      "question": "Onde encontro o link de rastreamento?",
+      "expected_status": "evidence_found",
+      "source": "entregas.md",
+      "section": "Rastreamento da entrega",
+      "max_cosine": 0.88889
+    },
+    {
+      "question": "Minha entrega atrasou, como devo proceder?",
+      "expected_status": "evidence_found",
+      "source": "entregas.md",
+      "section": "Atraso ou problema na entrega",
+      "max_cosine": 0.886103
+    },
+    {
+      "question": "Existe retirada presencial?",
+      "expected_status": "evidence_found",
+      "source": "entregas.md",
+      "section": "Retirada e entrega expressa",
+      "max_cosine": 0.865537
+    },
+    {
+      "question": "Como posso devolver um produto?",
+      "expected_status": "evidence_found",
+      "source": "trocas_atendimento.md",
+      "section": "Troca e devolução",
+      "max_cosine": 0.885948
+    },
+    {
+      "question": "Qual é o prazo para troca e devolução?",
+      "expected_status": "evidence_found",
+      "source": "trocas_atendimento.md",
+      "section": "Troca e devolução",
+      "max_cosine": 0.899289
+    },
+    {
+      "question": "O produto chegou quebrado. O que fazer?",
+      "expected_status": "evidence_found",
+      "source": "trocas_atendimento.md",
+      "section": "Produto com avaria",
+      "max_cosine": 0.883482
+    },
+    {
+      "question": "Como cancelar a compra antes da postagem?",
+      "expected_status": "evidence_found",
+      "source": "trocas_atendimento.md",
+      "section": "Cancelamento do pedido",
+      "max_cosine": 0.886621
+    },
+    {
+      "question": "Qual é o horário de atendimento humano?",
+      "expected_status": "evidence_found",
+      "source": "trocas_atendimento.md",
+      "section": "Horário de atendimento",
+      "max_cosine": 0.920764
+    },
+    {
+      "question": "Há atendimento aos sábados?",
+      "expected_status": "evidence_found",
+      "source": "trocas_atendimento.md",
+      "section": "Horário de atendimento",
+      "max_cosine": 0.904548
+    },
+    {
+      "question": "Quais são os produtos do catálogo?",
+      "expected_status": "evidence_found",
+      "source": "catalogo_pagamentos.md",
+      "section": "Produtos do catálogo",
+      "max_cosine": 0.902532
+    },
+    {
+      "question": "Qual é o material da Garrafa Aurora?",
+      "expected_status": "evidence_found",
+      "source": "catalogo_pagamentos.md",
+      "section": "Material e conservação da Garrafa Aurora",
+      "max_cosine": 0.90997
+    },
+    {
+      "question": "A Caneca Brisa pode ir ao micro-ondas?",
+      "expected_status": "evidence_found",
+      "source": "catalogo_pagamentos.md",
+      "section": "Material e conservação da Caneca Brisa",
+      "max_cosine": 0.909774
+    },
+    {
+      "question": "Quais são as medidas do Organizador Ninho?",
+      "expected_status": "evidence_found",
+      "source": "catalogo_pagamentos.md",
+      "section": "Material e medidas do Organizador Ninho",
+      "max_cosine": 0.898717
+    },
+    {
+      "question": "Quais formas de pagamento são aceitas?",
+      "expected_status": "evidence_found",
+      "source": "catalogo_pagamentos.md",
+      "section": "Formas de pagamento e parcelamento",
+      "max_cosine": 0.895135
+    },
+    {
+      "question": "Posso parcelar no cartão de crédito?",
+      "expected_status": "evidence_found",
+      "source": "catalogo_pagamentos.md",
+      "section": "Formas de pagamento e parcelamento",
+      "max_cosine": 0.895851
+    },
+    {
+      "question": "Existe desconto para Pix?",
+      "expected_status": "evidence_found",
+      "source": "catalogo_pagamentos.md",
+      "section": "Desconto no Pix",
+      "max_cosine": 0.915106
+    },
+    {
+      "question": "Qual é a previsão do tempo amanhã?",
+      "expected_status": "not_found",
+      "max_cosine": 0.840785
+    },
+    {
+      "question": "Quem ganhou o campeonato de futebol?",
+      "expected_status": "not_found",
+      "max_cosine": 0.773878
+    },
+    {
+      "question": "Qual é o salário do presidente?",
+      "expected_status": "not_found",
+      "max_cosine": 0.799714
+    },
+    {
+      "question": "Vocês vendem geladeiras?",
+      "expected_status": "not_found",
+      "max_cosine": 0.817158
+    },
+    {
+      "question": "Recomende investimentos em criptomoedas.",
+      "expected_status": "not_found",
+      "max_cosine": 0.82487
+    },
+    {
+      "question": "Como configuro o Wi-Fi do roteador?",
+      "expected_status": "not_found",
+      "max_cosine": 0.823405
+    },
+    {
+      "question": "Qual o prazo de aprovação do financiamento imobiliário?",
+      "expected_status": "not_found",
+      "max_cosine": 0.830289
+    },
+    {
+      "question": "A loja faz revisão de motos?",
+      "expected_status": "not_found",
+      "max_cosine": 0.841968
+    },
+    {
+      "question": "Como funciona o desconto do seguro de carro?",
+      "expected_status": "not_found",
+      "max_cosine": 0.837714
+    },
+    {
+      "question": "Minha geladeira está na garantia da fabricante?",
+      "expected_status": "not_found",
+      "max_cosine": 0.833212
+    },
+    {
+      "question": "O parcelamento da matrícula escolar tem juros?",
+      "expected_status": "not_found",
+      "max_cosine": 0.852712
+    },
+    {
+      "question": "Como devolver livros à biblioteca municipal?",
+      "expected_status": "not_found",
+      "max_cosine": 0.799718
+    },
+    {
+      "question": "Vocês emitem certidão de nascimento?",
+      "expected_status": "not_found",
+      "max_cosine": 0.826921
+    }
+  ]
+}

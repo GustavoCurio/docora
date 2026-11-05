@@ -1,6 +1,7 @@
 """Avaliação reproduzível e consultas do Docora pelo terminal."""
 import argparse
 import json
+import os
 from pathlib import Path
 import tempfile
 
@@ -23,14 +24,26 @@ def main():
     assessment = sub.add_parser("evaluate")
     assessment.add_argument("--output", type=Path, default=Path(tempfile.gettempdir()) / "docora" / "evaluation.json")
     assessment.add_argument("--suite", choices=["original", "heldout", "all"], default="original")
-    assessment.add_argument("--retriever", choices=["tfidf"], default="tfidf")
     assessment.add_argument("--allow-failures", action="store_true", help="Grava medições incompletas sem encerrar com código 1.")
     ask = sub.add_parser("ask")
     ask.add_argument("question")
+    for command in (ask, assessment):
+        command.add_argument("--retriever", choices=["tfidf", "bm25", "hybrid"], default=None,
+                             help="Padrão: DOCORA_RETRIEVER ou hybrid, com fallback TF-IDF.")
+    sub.add_parser("prepare-model", help="Baixa o encoder público para o cache local; não faz chamadas à OpenAI.")
     args = parser.parse_args()
-    index = KnowledgeIndex(demo_chunks())
+    if args.command == "prepare-model":
+        from .embeddings import load_embedder
+        os.environ["DOCORA_ALLOW_MODEL_DOWNLOAD"] = "1"
+        model, reason = load_embedder()
+        print("Modelo local pronto no cache." if model else reason)
+        raise SystemExit(0 if model else 1)
+    index = KnowledgeIndex(demo_chunks(), retriever=args.retriever)
     if args.command == "ask":
-        print(json.dumps(answer_question(args.question, index).to_dict(), ensure_ascii=False, indent=2))
+        result = answer_question(args.question, index).to_dict()
+        result.update(retriever_requested=index.requested_retriever, retriever_active=index.active_retriever,
+                      fallback_reason=index.fallback_reason)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
         suites = ["original", "heldout"] if args.suite == "all" else [args.suite]
         reports = []
