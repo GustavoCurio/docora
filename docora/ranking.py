@@ -4,32 +4,26 @@ import math
 
 import numpy as np
 
-from .retrieval import normalize, STOP_WORDS
-import re
-
-
-def tokenize(text):
-    """Mesma normalização/stopwords do TF-IDF, preservando frequências."""
-    return [token for token in re.findall(r"\b\w{2,}\b", normalize(text)) if token not in STOP_WORDS]
+from .textnorm import tokenize
 
 
 class BM25:
     """BM25 Okapi com IDF positivo e parâmetros usuais k1=1,5 e b=0,75."""
     def __init__(self, corpus, k1=1.5, b=0.75):
         self.documents = [Counter(tokenize(text)) for text in corpus]
-        self.lengths = np.asarray([sum(doc.values()) for doc in self.documents])
-        self.average_length = max(float(self.lengths.mean()), 1)
+        self.lengths = np.asarray([sum(doc.values()) for doc in self.documents], dtype=np.float64)
+        self.average_length = max(float(self.lengths.mean()) if len(self.lengths) else 1.0, 1.0)
         frequency = Counter(token for doc in self.documents for token in doc)
         self.idf = {token: math.log(1 + (len(corpus) - count + 0.5) / (count + 0.5)) for token, count in frequency.items()}
         self.k1, self.b = k1, b
 
     def scores(self, question):
         """Soma IDF × saturação TF; termos repetidos da consulta contam uma vez."""
-        result = np.zeros(len(self.documents))
+        result = np.zeros(len(self.documents), dtype=np.float64)
         for token in set(tokenize(question)):
-            frequencies = np.asarray([doc[token] for doc in self.documents])
+            frequencies = np.asarray([doc[token] for doc in self.documents], dtype=np.float64)
             denominator = frequencies + self.k1 * (1 - self.b + self.b * self.lengths / self.average_length)
-            result += self.idf.get(token, 0) * frequencies * (self.k1 + 1) / denominator
+            result += self.idf.get(token, 0.0) * frequencies * (self.k1 + 1) / np.maximum(denominator, 1e-12)
         return result
 
 

@@ -50,22 +50,38 @@ st.divider()
 conversation, references = st.columns([2.15, 1], gap="large")
 
 @st.cache_resource
-def embedding_resource():
+def embedding_resource(_cache_bust=2):
     """Compartilha um único encoder local entre a demo e as bibliotecas enviadas."""
     from docora.embeddings import load_embedder
     return load_embedder()
 
 
-@st.cache_resource
-def demo_index(retriever, reranker):
-    """Cria o índice demonstrativo compartilhado pelo cache de recursos do Streamlit."""
-    if retriever == "hybrid":
-        model, reason = embedding_resource()
-        index = KnowledgeIndex(demo_chunks(), retriever=retriever, embedder=model, reranker=reranker)
-        if reason:
-            index.fallback_reason = reason
+def _build_demo_index(retriever, reranker):
+    """Monta o índice da demo com fallback lexical se o híbrido falhar no boot."""
+    retriever = str(retriever or "hybrid")
+    reranker = str(reranker or "none")
+    if retriever not in {"hybrid", "bm25", "tfidf"}:
+        retriever = "hybrid"
+    if reranker not in {"none", "rules", "crossencoder"}:
+        reranker = "none"
+    try:
+        if retriever == "hybrid":
+            model, reason = embedding_resource()
+            index = KnowledgeIndex(demo_chunks(), retriever=retriever, embedder=model, reranker=reranker)
+            if reason:
+                index.fallback_reason = reason
+            return index
+        return KnowledgeIndex(demo_chunks(), retriever=retriever, embedder=None, reranker=reranker)
+    except Exception as error:
+        index = KnowledgeIndex(demo_chunks(), retriever="tfidf", embedder=None, reranker="none")
+        index.fallback_reason = f"Falha ao iniciar a busca ({type(error).__name__}); usando TF-IDF."
         return index
-    return KnowledgeIndex(demo_chunks(), retriever=retriever, reranker=reranker)
+
+
+@st.cache_resource
+def demo_index(retriever, reranker, _cache_bust=2):
+    """Cria o índice demonstrativo compartilhado pelo cache de recursos do Streamlit."""
+    return _build_demo_index(retriever, reranker)
 
 with references:
     sources_slot = st.container()
@@ -86,7 +102,7 @@ with references:
             st.success("Exemplo carregado: Lume Casa. Escolha uma pergunta rápida ou escreva sua dúvida.")
         index = None
         if collection == "Loja demonstrativa":
-            index = demo_index(retriever, reranker)
+            index = demo_index(str(retriever), str(reranker))
             st.caption("Lume Casa · loja fictícia. Conteúdo demonstrativo.")
         else:
             uploaded = st.file_uploader("Enviar documentos", type=["md", "txt", "pdf"], accept_multiple_files=True)
@@ -112,7 +128,7 @@ with references:
                         st.session_state["upload_index"] = upload_index
                         st.session_state["upload_key"] = upload_key
                     index = st.session_state["upload_index"]
-                except ValueError as error:
+                except (ValueError, TypeError, RuntimeError) as error:
                     st.error(str(error))
         if index:
             st.caption(f"Busca ativa: {retriever_names[index.active_retriever]}")
