@@ -89,7 +89,7 @@ Na [medição local com cache vazio](reports/runtime_hybrid_cold.json), a primei
 resposta, incluindo importações e download, levou **8,06 s**; o pico do processo
 incluindo Streamlit foi **710 MiB**. Recriar o índice com o modelo carregado levou
 **177 ms**. Não é uma medição dentro do Community Cloud: rede, CPU e sessões
-concorrentes podem mudar esses valores. A margem para ~1 GB é limitada. Para
+concorrentes podem mudar esses valores. O limite documentado do [Community Cloud](https://docs.streamlit.io/deploy/streamlit-community-cloud/manage-your-app) é de **~2,7 GB**. Para decidir sobre modelos adicionais, usamos a margem conservadora de **~2 GB para o processo completo**. Para
 inicialização previsível, o padrão usa somente cache local e mantém o TF-IDF
 disponível. Em um novo contêiner Cloud sem pesos, é preciso habilitar o download
 explicitamente para usar o híbrido. Falhas de importação, cache, carregamento ou

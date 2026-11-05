@@ -83,7 +83,7 @@ No Linux local com Python 3.12, o processo com encoder e AppTest atingiu pico de
 Com pesos em disco, um processo novo respondeu em 2,27 s; com modelo em memória,
 recriar os vetores da demo levou cerca de 173–177 ms. Relatórios em
 `reports/runtime_hybrid_*.json`. A medição não é um teste de carga no Community
-Cloud: múltiplas sessões e bases maiores consomem mais memória. A demo padrão
+Cloud: múltiplas sessões e bases maiores consomem mais memória. O [limite oficial](https://docs.streamlit.io/deploy/streamlit-community-cloud/manage-your-app) é de ~2,7 GB; a decisão sobre o cross-encoder exige margem abaixo de ~2 GB para o app completo. A demo padrão
 preserva o TF-IDF sem baixar pesos. Encerramento por OOM do sistema operacional
 não é recuperável por `try/except`.
 
