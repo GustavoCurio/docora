@@ -20,7 +20,9 @@ def main():
         raise RuntimeError(reason)
     chunks = demo_chunks()
     matrix = model.encode([c.section + "\n" + c.text for c in chunks])
-    queries = model.encode([c["question"] for c in cases], query=True)
+    # Quantização dinâmica pode variar conforme o padding do lote. A aplicação
+    # consulta uma pergunta por vez; a calibração reproduz esse mesmo caminho.
+    queries = np.concatenate([model.encode([c["question"]], query=True) for c in cases])
     maximum = (queries @ matrix.T).max(axis=1)
     sweep = []
     for cut in (0.82, 0.83, 0.84, 0.85, 0.86, 0.87, 0.88):
@@ -30,7 +32,7 @@ def main():
     result = {"model": MODEL_REPO, "revision": MODEL_REVISION,
               "scope": "Somente original e negativos de desenvolvimento; nenhum acesso ao held-out.",
               "selected_min_cosine": HYBRID_MIN_COSINE, "selected_max_gap": HYBRID_MAX_GAP,
-              "selection_rule": "Menor corte da grade que rejeita todos os negativos de desenvolvimento/original, preservando os 20 positivos originais. Janela fixa de 0,03 para limitar a cauda antes de RRF.",
+              "selection_rule": "Maior corte da grade que preserva os 20 positivos originais. Negativos de desenvolvimento medem o custo em falsos positivos. Janela fixa de 0,03 para limitar a cauda antes de RRF.",
               "sweep": sweep,
               "results": [{**case, "max_cosine": round(float(score), 6)} for case, score in zip(cases, maximum)]}
     print(json.dumps(result, ensure_ascii=False, indent=2))
