@@ -1,6 +1,6 @@
 # Docora
 
-🔗 **Demo online:** [docora.streamlit.app](https://docora.streamlit.app/) (modo extrativo, sem chave de API)
+🔗 **Demo online:** [docora-rag.streamlit.app](https://docora-rag.streamlit.app/) (modo extrativo, sem chave de API)
 
 [![Testes e avaliação](https://github.com/GustavoCurio/docora/actions/workflows/tests.yml/badge.svg)](https://github.com/GustavoCurio/docora/actions/workflows/tests.yml)
 
