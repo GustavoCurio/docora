@@ -21,9 +21,7 @@ class LocalEmbedder:
     """
     def __init__(self, cache_dir, allow_download=False):
         os.environ.setdefault("TOKENIZERS_PARALLELISM", "false")
-        import onnxruntime as ort
         from huggingface_hub import hf_hub_download
-        from tokenizers import Tokenizer
 
         paths = {}
         for file in ("tokenizer.json", MODEL_FILE):
@@ -31,6 +29,10 @@ class LocalEmbedder:
                 MODEL_REPO, file, revision=MODEL_REVISION, cache_dir=cache_dir,
                 local_files_only=not allow_download, token=False, etag_timeout=5,
             )
+        # Cache ausente não precisa importar os runtimes nativos no cold start.
+        import onnxruntime as ort
+        from tokenizers import Tokenizer
+
         self.tokenizer = Tokenizer.from_file(paths["tokenizer.json"])
         self.tokenizer.enable_truncation(max_length=256)
         self.tokenizer.enable_padding(pad_id=1, pad_token="<pad>")
