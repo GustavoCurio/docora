@@ -10,8 +10,9 @@ O Docora aborda esse problema com uma aplicação de consulta documental em port
 
 - Ingestão de Markdown, TXT e PDFs com texto selecionável.
 - Divisão em trechos com título, seção, linhas ou página e identificador determinístico.
-- Recuperação lexical combinando TF-IDF de palavras e de caracteres.
-- Resposta extrativa local e síntese generativa opcional com referências validadas.
+- Recuperação TF-IDF, BM25 e híbrida com E5 ONNX, filtros e fallback lexical.
+- Resposta extrativa de até seis sentenças/120 palavras com citação em cada sentença, e síntese generativa opcional com referências validadas.
+- Reranking opcional por regras ou cross-encoder multilíngue ONNX, sem Torch; padrão desligado por não melhorar as métricas do híbrido no held-out.
 - Interface para perguntas, documentos próprios, inspeção das fontes e exportação da consulta.
 - API HTTP para integração com outros sistemas.
 
@@ -44,6 +45,6 @@ Os testes automatizados também cobrem um PDF real criado como fixture, identifi
 
 ## Stack
 
-Python, scikit-learn, Streamlit, FastAPI, Pydantic, pypdf e SDK da OpenAI. Os testes usam pytest, TestClient e o ambiente de testes do Streamlit.
+Python, scikit-learn, ONNX Runtime, tokenizers, Streamlit, FastAPI, Pydantic, pypdf e SDK da OpenAI. Os testes usam pytest, TestClient e o ambiente de testes do Streamlit. As avaliações e medições dos itens 5–6 são inteiramente locais, sem chamadas à OpenAI; as tabelas e a decisão de memória estão no README.
 
 O projeto demonstra construção de uma aplicação de atendimento com documentos, avaliação de recuperação e integração entre interface, serviço HTTP e provedor generativo.

@@ -17,7 +17,7 @@ Localizar uma regra de atendimento entre políticas, produtos e procedimentos to
 | Recurso | Implementação |
 |---|---|
 | Recuperação local | TF-IDF, BM25 ou BM25 + embeddings multilíngues ONNX com fusão RRF; até três fontes |
-| Resposta extrativa | Reproduz trechos sem chave de API; TF-IDF funciona sem baixar modelos |
+| Resposta extrativa | Seleciona até seis sentenças/120 palavras, com citação por sentença; funciona sem chave |
 | Fontes rastreáveis | Documento, seção, página ou linhas e identificador de trecho |
 | Biblioteca própria | Ingestão de Markdown, TXT e PDF com texto selecionável, em memória e isolada da demonstração |
 | Síntese com IA opcional | Aparece somente com chave no servidor; exige modelo configurado e autorização de envio |
@@ -217,6 +217,122 @@ O [CI](.github/workflows/tests.yml) mantém a matriz **Python 3.12/3.14**, cache
 pip, embeddings desativados e download bloqueado. Executa o original TF-IDF e
 mede também o fallback explícito nas duas suítes. Não exige aprovação de todos
 os casos do held-out nem baixa pesos em cada job.
+
+## Respostas por sentenças e reranking — itens 5 e 6
+
+O modo `extractive` agora seleciona sentenças dos três melhores trechos. Usa
+overlap lexical, seção e prioridade do ranking; quando o híbrido está ativo,
+reutiliza o E5 para comparar sentenças com a pergunta. Não carrega outro encoder.
+Remove repetições, preservando diferenças numéricas e negações; ordena por fonte
+e posição original. O limite é de **seis sentenças e 120 palavras**, sem cortar
+uma sentença no meio. Cada sentença termina com sua citação `[Fn]`. Só fontes
+citadas permanecem na resposta. Guardrails continuam antes da busca; ausência
+de evidência mantém `not_found`. Se nenhuma sentença couber, também se abstém.
+
+Comparação real do extrativo anterior com o novo, mesmas perguntas e corpus:
+
+| Recuperador / conjunto | Palavras médias antes → depois | Citação inline por sentença (%) | Fidelidade lexical (%) | Critérios antes → depois | Dentro de 6 sentenças/120 palavras antes → depois |
+|---|---:|---:|---:|---:|---:|
+| TF-IDF / original | 63,30 → 37,60 | 0 → 100 | 100 → 100 | 28/28 → 28/28 | 24/28 → 28/28 |
+| TF-IDF / held-out | 54,16 → 30,05 | 0 → 100 | 100 → 100 | 22/38 → 22/38 | 35/38 → 38/38 |
+| Híbrido / original | 48,65 → 30,50 | 0 → 100 | 100 → 100 | 28/28 → 28/28 | 27/28 → 28/28 |
+| Híbrido / held-out | 67,56 → 34,00 | 0 → 100 | 100 → 100 | 30/38 → 30/38 | 32/38 → 38/38 |
+
+O extrativo anterior citava o cabeçalho do bloco, por isso sua citação inline
+por sentença era zero, apesar do suporte lexical de 100%. Depois, 100% das
+sentenças são fragmentos literais da fonte citada; nenhuma resposta tem duplicata
+exata. A seção esperada é citada no corpo em 100% do original, 52,17% do held-out
+TF-IDF e 69,57% do held-out híbrido. Isso mede proveniência e cobertura de uma
+fonte aceitável, sem garantir resposta completa. Veja os relatórios
+[antes TF-IDF](reports/items56_before_tfidf.json),
+[depois TF-IDF](reports/items5_after_tfidf.json),
+[antes híbrido](reports/items56_before_hybrid.json) e
+[depois híbrido](reports/items5_after_hybrid.json), com o texto de cada resposta.
+
+Os rerankers reordenam **até dez candidatos já aceitos pelos filtros**. As regras
+combinam prioridade, match da seção/título e overlap do corpo, sem modelo extra.
+O CE escolhido é [mMARCO mMiniLMv2 L12 H384 multilíngue](https://huggingface.co/cross-encoder/mmarco-mMiniLMv2-L12-H384-v1),
+revisão `1427fd652930e4ba29e8149678df786c240d8825`, arquivo
+`onnx/model_quint8_avx2.onnx`: **118.620.016 bytes (113,12 MiB)** de pesos,
+mais 17.082.660 bytes de tokenizador. Executa localmente, sem Torch, com duas
+threads, lotes de dois pares e até 256 tokens por par. Não usa logits para
+reclassificar OOD nem ressuscita evidências rejeitadas.
+
+| Held-out / recuperação + reranker | R@1 (%) | R@3 (%) | MRR@5 | Falso positivo OOD (%) | Critérios |
+|---|---:|---:|---:|---:|---:|
+| [TF-IDF + none](reports/items5_after_tfidf.json) | 47,83 | 52,17 | 0,5000 | 41,67 | 22/38 |
+| [TF-IDF + rules](reports/items6_rules_tfidf.json) | 47,83 | 52,17 | 0,5000 | 41,67 | 22/38 |
+| [TF-IDF + crossencoder](reports/items6_crossencoder_tfidf.json) | 52,17 | 52,17 | 0,5217 | 41,67 | 22/38 |
+| [Híbrido + none](reports/items5_after_hybrid.json) | 65,22 | 69,57 | 0,6739 | 8,33 | 30/38 |
+| [Híbrido + rules](reports/items6_rules_hybrid.json) | 65,22 | 69,57 | 0,6739 | 8,33 | 30/38 |
+| [Híbrido + crossencoder](reports/items6_crossencoder_hybrid.json) | 65,22 | 69,57 | 0,6739 | 8,33 | 30/38 |
+
+No original, as seis opções mantêm **28/28**, R@1/R@3 de 100%, MRR@5 1,0000,
+OOD 0% e fidelidade lexical 100%. No held-out, todas mantêm fidelidade lexical
+100%. A avaliação usa um único ranking por pergunta tanto na resposta quanto
+nas métricas. Aliases, corpus, cortes e casos permaneceram intactos; não houve
+retuning no held-out. Empates agregados não implicam rankings idênticos por caso.
+
+Recursos reais em Python 3.12.16, Linux/CPU, com E5 e Streamlit AppTest, processos
+novos por opção. A RAM extra abaixo é a diferença de picos entre processos;
+inclui ruído de alocação. As regras não adicionam pesos de modelo.
+
+| Reranker | Pico total (MiB) | Pico extra vs none (MiB) | Primeira resposta, pesos em disco (s) |
+|---|---:|---:|---:|
+| [none](reports/items6_runtime_none.json) | 708,17 | 0 | 2,35 |
+| [rules](reports/items6_runtime_rules.json) | 713,62 | +5,45 | 2,07 |
+| [crossencoder](reports/items6_runtime_crossencoder.json) | 1.118,45 | +410,28 | 3,15 |
+
+| Reranker | Busca média / p95 (ms) | Resposta completa média / p95 (ms) | Reranking não vazio médio (ms) | Dez pares, reranking médio (ms) |
+|---|---:|---:|---:|---:|
+| none | 2,84 / 3,37 | 12,89 / 34,12 | 0 | 0 |
+| rules | 3,00 / 3,63 | 13,37 / 35,11 | 0,08 | 0,30 |
+| crossencoder | 20,29 / 56,84 | 31,11 / 94,90 | 33,28 | 203,18 |
+
+São três rodadas de 35 perguntas held-out sem guardrail, incluindo OOD que não
+executa reranking quando não há candidatos. A resposta completa inclui seleção
+de sentenças. O [cold start sem CE no cache](reports/items6_runtime_crossencoder_cold.json),
+com E5 já em disco, levou **9,86 s**, incluindo download do CE; pico **1.129,36 MiB**.
+Não é medição dentro do Cloud nem teste de sessões simultâneas.
+
+**Por que escolhi:** mantenho **`DOCORA_RERANKER=none`** no padrão e na demo.
+O CE coube na margem local de ~2 GB (pico de ~1,10 GiB, incluindo E5 e UI), mas
+não melhorou o held-out híbrido: R@1 65,22%, R@3 69,57%, MRR 0,6739 e um falso
+positivo em 12 OOD permaneceram iguais. O pequeno ganho no TF-IDF não supera o
+híbrido. As regras também empataram e acrescentam trabalho. Assim, as duas
+opções ficam disponíveis para experimentos locais; o CE permanece **off por
+padrão no Cloud**. O teto oficial do Community Cloud é **~2,7 GB**; a margem de
+~2 GB é uma escolha conservadora para a decisão, sem garantia de capacidade
+sob concorrência. Um novo domínio exige nova avaliação antes de mudar o padrão.
+
+Configuração e reprodução, sem chamadas à OpenAI:
+
+```bash
+export DOCORA_MODEL_CACHE=/tmp/docora-models
+export DOCORA_RERANKER=none  # none | rules | crossencoder
+# Sem a autorização abaixo, o código usa apenas arquivos já no cache.
+export DOCORA_ALLOW_MODEL_DOWNLOAD=0
+.venv/bin/python -m docora prepare-model
+.venv/bin/python -m docora prepare-reranker
+.venv/bin/python -m docora ask "Em quanto tempo o pedido chega na capital paulista?" --retriever hybrid --reranker crossencoder
+.venv/bin/python -m docora evaluate --suite all --retriever hybrid --reranker crossencoder --allow-failures --output /tmp/avaliacao-ce.json
+.venv/bin/python scripts/benchmark_reranking.py --reranker crossencoder --output /tmp/recursos-ce.json
+```
+
+`prepare-model` e `prepare-reranker` autorizam explicitamente o download público
+para preparar seus respectivos caches. Fora desses comandos, somente
+`DOCORA_ALLOW_MODEL_DOWNLOAD=1` autoriza baixar pesos/tokenizador. O CE só é
+carregado quando solicitado: o download do E5 já autorizado na
+[demo](https://docora-rag.streamlit.app/) não liga o CE. Ausência ou falha do CE
+retorna a `rules`, com motivo visível na CLI/UI/API; `DOCORA_DISABLE_RERANKER=1`
+também força esse fallback. Falhas de carga são memorizadas até reiniciar o
+processo. O encerramento por OOM do sistema operacional não é capturável.
+
+A suíte rápida passou com **103 testes em Python 3.12 e 3.14**, sem modelos nem
+downloads; os dois testes `slow` passaram com E5 e CE reais em cache, no Python
+3.12. A matriz de CI mantém 3.12/3.14, gates fechados e mocks para o CE.
+[Avaliação original em 3.14](reports/items56_original_python314.json) e
+[fallback real sem cache](reports/items56_fallback_all.json) preservam 28/28.
 
 ## Síntese com IA opcional
 

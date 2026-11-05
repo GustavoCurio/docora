@@ -50,7 +50,9 @@ recuperador solicitado/ativo e eventual retorno ao TF-IDF.
   total de casos `not_found`. Encaminhamentos não contam como evidência.
 - **Fidelidade lexical extrativa:** separa o texto real da resposta em sentenças
   por pontuação final e quebras de linha, removendo apenas introdução fixa,
-  cabeçalhos com referência e divisórias. Cada sentença herda a citação do bloco.
+  cabeçalhos com referência e divisórias. No extrativo novo, cada sentença tem
+  sua própria referência inline; o leitor também aceita referências herdadas
+  de cabeçalhos para comparar os relatórios do extrativo anterior.
   Após normalização de acentos, caixa e remoção das stopwords existentes, exige
   pelo menos 80% dos termos únicos no **texto do trecho citado**. Texto sem
   referência conta como não sustentado. A média é ponderada pelo número de
@@ -61,3 +63,42 @@ recuperador solicitado/ativo e eventual retorno ao TF-IDF.
 Fidelidade lexical não mede pertinência à pergunta, inferência semântica,
 contradição ou resposta completa. Uma seção errada copiada fielmente pode obter
 100%; por isso as métricas de recuperação e OOD são apresentadas juntas.
+
+## Resposta por sentenças e rerankers
+
+Os relatórios `reports/items56_before_*.json` registram o extrativo anterior com
+as mesmas checagens de resposta do novo. `items5_after_*.json` usa o novo seletor,
+sem reranking; `items6_rules_*.json` e `items6_crossencoder_*.json` comparam as duas
+opções em TF-IDF e híbrido. Os casos, corpus, aliases e cortes não foram alterados.
+O held-out serve à decisão de habilitação, sem ajuste de parâmetros após medir.
+
+`answer_checks` mede citação inline válida por sentença, fragmento literal na
+fonte citada (espaços normalizados), fonte esperada efetivamente citada no corpo,
+até seis sentenças/120 palavras e ausência de duplicatas exatas. A média de
+palavras inclui apenas respostas `evidence_found`. Os limites contam o texto,
+sem os marcadores `[Fn]`. No baseline, as referências por cabeçalho dão suporte
+lexical, mas não contam como citação inline por sentença. São checagens
+estruturais e de proveniência; não medem completude, contradições ou implicação.
+
+A avaliação faz uma busca por pergunta e reutiliza o mesmo ranking para a
+resposta e R@k/MRR, evitando medir duas inferências como se fossem uma única
+consulta. Guardrails são executados antes da busca. Ambos os rerankers recebem
+até dez candidatos já filtrados, independentemente do corte de saída.
+
+```bash
+python -m docora prepare-model
+python -m docora prepare-reranker
+DOCORA_ALLOW_MODEL_DOWNLOAD=0 python -m docora evaluate --suite all --retriever hybrid --reranker none --allow-failures --output /tmp/sem-reranking.json
+DOCORA_ALLOW_MODEL_DOWNLOAD=0 python -m docora evaluate --suite all --retriever hybrid --reranker rules --allow-failures --output /tmp/regras.json
+DOCORA_ALLOW_MODEL_DOWNLOAD=0 python -m docora evaluate --suite all --retriever hybrid --reranker crossencoder --allow-failures --output /tmp/ce.json
+python scripts/benchmark_reranking.py --reranker crossencoder --output /tmp/recursos-ce.json
+python -m pytest -q -m slow
+```
+
+`items6_runtime_*.json` mede processos novos Linux com E5 e Streamlit AppTest;
+o arquivo `crossencoder_cold` começa sem CE, mas com o E5 em disco. Cada opção
+executa três rodadas das 35 perguntas held-out sem guardrail, incluindo OOD.
+Latência de busca, resposta completa e reranking não vazio são separadas.
+Também há três medições diretas de dez pares. Diferenças de RSS entre processos
+incluem ruído de alocação; as regras não adicionam modelo. A medição local não
+é teste de carga ou medição do contêiner do Community Cloud.

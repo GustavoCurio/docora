@@ -8,11 +8,13 @@ flowchart LR
     VEC --> RRF[Fusão RRF com filtros semânticos]
     IDX --> RRF
     Q[Pergunta] --> G[Validação de entrada]
-    G --> RET[Recuperação de até 3 trechos]
+    G --> RET[Recuperação e filtros de evidência]
     IDX --> RET
     RRF --> RET
-    RET --> LOCAL[Resposta extrativa]
-    RET --> LLM[Síntese generativa opcional]
+    RET --> RANK[Reranking opcional do top-10]
+    RANK --> TOP[Até 3 fontes]
+    TOP --> LOCAL[Seleção de sentenças citadas]
+    TOP --> LLM[Síntese generativa opcional]
     LLM --> VALID[Validação das referências]
     LOCAL --> UI[Interface e API]
     VALID --> UI
@@ -56,7 +58,11 @@ threads e arena de memória desativada; não há dependência de Torch.
 
 ## Resposta e citações
 
-No modo extrativo, a aplicação segmenta os três trechos recuperados em sentenças (pontuação e linhas; preserva decimais e abreviações usuais). A seleção lexical usa overlap com a pergunta expandida, seção e prioridade do ranking, sem carregar outro encoder. Reserva uma sentença por fonte, preenche com sentenças com overlap e remove duplicatas por Jaccard ≥0,85 ou semelhança textual ≥0,92. A resposta contém até seis sentenças e 120 palavras, preserva a posição dentro de cada trecho e inclui `[Fn]` em cada sentença. Sentenças acima do orçamento são omitidas inteiras; se nenhuma couber, retorna `not_found`. Só fontes efetivamente citadas permanecem na resposta. O status evidence_found significa que há evidência textual relacionada; não garante que todos os detalhes da pergunta estejam respondidos.
+No modo extrativo, a aplicação segmenta os três trechos recuperados em sentenças (pontuação e linhas; preserva decimais e abreviações usuais). A seleção usa overlap com a pergunta expandida, seção e prioridade do ranking. No híbrido, soma o cosseno das sentenças com a pergunta, reutilizando o E5 carregado; uma falha nessa etapa mantém a seleção lexical, sem carregar outro modelo. Reserva uma sentença por fonte quando couber, preenche com sentenças com overlap e remove duplicatas por Jaccard ≥0,85 ou semelhança textual ≥0,92. Diferenças em números, negações e condições usuais impedem deduplicação para preservar possíveis conflitos. A resposta contém até seis sentenças e 120 palavras, preserva a posição dentro de cada trecho e inclui `[Fn]` em cada sentença. Sentenças acima do orçamento são omitidas inteiras; se nenhuma couber, retorna `not_found`. Só fontes efetivamente citadas permanecem na resposta. O status evidence_found significa que há evidência textual relacionada; não garante que todos os detalhes da pergunta estejam respondidos.
+
+O reranker atua depois dos filtros de evidência e antes do corte de três fontes da resposta. `DOCORA_RERANKER=none|rules|crossencoder` e `--reranker` selecionam o modo; `none` é o padrão em todos os ambientes. As regras combinam prioridade do ranking, overlap no título/seção/corpo e frase de seção, sem pesos de modelo adicionais. O cross-encoder pontua até dez candidatos aceitos com mMARCO mMiniLMv2 L12 H384, ONNX INT8, revisão fixa, CPU, duas threads, arena desativada, pares de até 256 tokens e lotes de dois. Ambos preservam os escores originais do recuperador e apenas mudam a ordem. Nenhum deles recupera um candidato rejeitado nem substitui os cortes OOD por logits do CE.
+
+O CE usa o mesmo gate dos embeddings: `DOCORA_ALLOW_MODEL_DOWNLOAD=1` permite baixar os dois arquivos públicos somente quando o CE foi solicitado; sem essa flag, só consulta o cache `DOCORA_MODEL_CACHE`. O comando `prepare-reranker` autoriza explicitamente esse preparo. Ausência, erro de carga ou inferência voltam a `rules`; `DOCORA_DISABLE_RERANKER=1` também desativa o CE. A carga é compartilhada por processo e falhas são memorizadas até reiniciar. UI, CLI e API informam o modo ativo e eventual fallback. O download do E5 autorizado na demo não ativa o CE automaticamente. A decisão medida está no README.
 
 No modo generativo, a pergunta e até três trechos são enviados à Responses API com instruções para usar exclusivamente as evidências. A saída estruturada contém answer, answerable e citations. Identificadores ausentes, citações inexistentes e divergências entre marcadores no texto e lista de fontes invalidam a resposta.
 
@@ -84,7 +90,7 @@ Com pesos em disco, um processo novo respondeu em 2,27 s; com modelo em memória
 recriar os vetores da demo levou cerca de 173–177 ms. Relatórios em
 `reports/runtime_hybrid_*.json`. A medição não é um teste de carga no Community
 Cloud: múltiplas sessões e bases maiores consomem mais memória. O [limite oficial](https://docs.streamlit.io/deploy/streamlit-community-cloud/manage-your-app) é de ~2,7 GB; a decisão sobre o cross-encoder exige margem abaixo de ~2 GB para o app completo. A demo padrão
-preserva o TF-IDF sem baixar pesos. Encerramento por OOM do sistema operacional
+mantém o CE desligado; na demo publicada o download do E5 está autorizado explicitamente. Sem cache e sem autorização, o código retorna ao TF-IDF. Encerramento por OOM do sistema operacional
 não é recuperável por `try/except`.
 
 A API usa a base demonstrativa do servidor e não inclui autenticação de usuários. A publicação externa deve adicionar autenticação, limites de tráfego e gerenciamento de segredos. Os comandos do README mantêm o serviço restrito ao computador local.
