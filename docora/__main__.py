@@ -28,12 +28,19 @@ def main():
     ask = sub.add_parser("ask")
     ask.add_argument("question")
     for command in (ask, assessment):
-        command.add_argument("--reranker", choices=["none", "rules"], default=None,
+        command.add_argument("--reranker", choices=["none", "rules", "crossencoder"], default=None,
                              help="Padrão: DOCORA_RERANKER ou none; reordena até dez candidatos aceitos.")
         command.add_argument("--retriever", choices=["tfidf", "bm25", "hybrid"], default=None,
                              help="Padrão: DOCORA_RETRIEVER ou hybrid, com fallback TF-IDF.")
     sub.add_parser("prepare-model", help="Baixa o encoder público para o cache local; não faz chamadas à OpenAI.")
+    sub.add_parser("prepare-reranker", help="Baixa o cross-encoder público para o cache local; inferência sem OpenAI.")
     args = parser.parse_args()
+    if args.command == "prepare-reranker":
+        from .crossencoder import load_crossencoder
+        os.environ["DOCORA_ALLOW_MODEL_DOWNLOAD"] = "1"
+        model, reason = load_crossencoder()
+        print("Cross-encoder local pronto no cache." if model else reason)
+        raise SystemExit(0 if model else 1)
     if args.command == "prepare-model":
         from .embeddings import load_embedder
         os.environ["DOCORA_ALLOW_MODEL_DOWNLOAD"] = "1"

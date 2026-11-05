@@ -26,6 +26,7 @@ ALIASES = {
     "cancelar": "cancelamento", "falar": "contato atendimento",
 }
 _AUTO_EMBEDDER = object()
+_AUTO_RERANKER = object()
 # Calibrados somente em questions.json + development_questions.json.
 HYBRID_MIN_COSINE = 0.85
 HYBRID_MAX_GAP = 0.03
@@ -191,13 +192,15 @@ class KnowledgeIndex:
     A base é deduplicada pelo ID do trecho e os vetorizadores aprendem apenas
     o corpus recebido. Escores TF-IDF, BM25 e RRF têm escalas diferentes.
     """
-    def __init__(self, chunks, retriever=None, embedder=_AUTO_EMBEDDER, reranker=None):
+    def __init__(self, chunks, retriever=None, embedder=_AUTO_EMBEDDER, reranker=None, crossencoder=_AUTO_RERANKER):
         """Prepara TF-IDF, BM25 e, se disponível, vetores locais do corpus.
 
         Args:
             chunks: Trechos a indexar; IDs repetidos conservam a última ocorrência.
             retriever: tfidf, bm25 ou hybrid; None consulta DOCORA_RETRIEVER.
             embedder: Encoder injetável com encode; None força fallback lexical.
+            reranker: none (padrão), rules ou crossencoder; lê DOCORA_RERANKER.
+            crossencoder: Pontuador injetável com predict; None força regras.
 
         Raises:
             ValueError: A base fica vazia, supera 600 trechos/300.000 caracteres
@@ -219,10 +222,20 @@ class KnowledgeIndex:
         self.char_matrix = self.char.fit_transform(corpus)
         self.requested_retriever = retriever or os.environ.get("DOCORA_RETRIEVER", "hybrid")
         self.requested_reranker = reranker or os.environ.get("DOCORA_RERANKER", "none")
-        if self.requested_reranker not in {"none", "rules"}:
-            raise ValueError("Reranker inválido. Use none ou rules.")
+        if self.requested_reranker not in {"none", "rules", "crossencoder"}:
+            raise ValueError("Reranker inválido. Use none, rules ou crossencoder.")
         self.active_reranker = self.requested_reranker
         self.reranker_fallback_reason = None
+        self.crossencoder = None
+        self.last_rerank_ms = 0
+        if self.requested_reranker == "crossencoder":
+            if crossencoder is _AUTO_RERANKER:
+                from .crossencoder import load_crossencoder
+                crossencoder, self.reranker_fallback_reason = load_crossencoder()
+            self.crossencoder = crossencoder
+            if crossencoder is None:
+                self.active_reranker = "rules"
+                self.reranker_fallback_reason = self.reranker_fallback_reason or "Cross-encoder ausente; usando regras locais."
         if self.requested_retriever not in {"tfidf", "bm25", "hybrid"}:
             raise ValueError("Recuperador inválido. Use tfidf, bm25 ou hybrid.")
         self.active_retriever = self.requested_retriever
@@ -263,11 +276,29 @@ class KnowledgeIndex:
         """Aplica reranking ao top-10 após os filtros, antes do corte de saída."""
         if top_k < 1:
             raise ValueError("top_k deve ser positivo.")
+        self.last_rerank_ms = 0
         if self.active_reranker == "none":
             return self._retrieve(question, top_k, min_score)
         from .reranking import TOP_N, rules_rerank
         candidates = self._retrieve(question, max(TOP_N, top_k), min_score)
-        ordered = rules_rerank(question, candidates[:TOP_N])
+        if not candidates:
+            return []
+        started = perf_counter()
+        if self.active_reranker == "crossencoder":
+            try:
+                passages = [f"{hit.chunk.title}\n{hit.chunk.section}\n{hit.chunk.text}" for hit in candidates[:TOP_N]]
+                scores = np.asarray(self.crossencoder.predict(question, passages), dtype=np.float32)
+                if scores.shape != (len(passages),) or not np.isfinite(scores).all():
+                    raise ValueError("Escores inválidos do reranker.")
+                ordered = [candidates[int(i)] for i in np.argsort(-scores, kind="stable")]
+            except Exception as error:
+                self.active_reranker = "rules"
+                self.crossencoder = None
+                self.reranker_fallback_reason = f"Falha no cross-encoder ({type(error).__name__}); usando regras locais."
+                ordered = rules_rerank(question, candidates[:TOP_N])
+        else:
+            ordered = rules_rerank(question, candidates[:TOP_N])
+        self.last_rerank_ms = round((perf_counter() - started) * 1000, 3)
         return (ordered + candidates[TOP_N:])[:top_k]
 
     def _retrieve(self, question, top_k=3, min_score=None):

@@ -77,7 +77,7 @@ with references:
         retriever = st.selectbox("Método de busca", list(retriever_names),
                                 index=list(retriever_names).index(configured_retriever),
                                 format_func=retriever_names.get, key="retriever")
-        reranker_names = {"none": "Sem reordenação", "rules": "Regras locais"}
+        reranker_names = {"none": "Sem reordenação", "rules": "Regras locais", "crossencoder": "Cross-encoder local"}
         reranker = server_setting("DOCORA_RERANKER") or "none"
         reranker = reranker if reranker in reranker_names else "none"
         collection = st.radio("Documentos usados na consulta", ["Loja demonstrativa", "Meus documentos"], key="collection")
