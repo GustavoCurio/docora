@@ -1,0 +1,56 @@
+{
+  "executed_utc": "2026-11-05T09:12:22.745002+00:00",
+  "retriever_requested": "hybrid",
+  "retriever_active": "tfidf",
+  "fallback_reason": "Encoder local indisponível (LocalEntryNotFoundError); usando TF-IDF.",
+  "native_runtime_imported": false,
+  "cache_created": false,
+  "index_build_ms": 86.82,
+  "total_with_streamlit_ms": 1493.54,
+  "peak_rss_mib": 206.92,
+  "streamlit_extractive_answered": true,
+  "answer": {
+    "status": "evidence_found",
+    "message": "Encontrei estas informações nos documentos:\n\n**Regiões atendidas e prazo de entrega** [F1]\n\nA Lume Casa atende São Paulo (SP), Rio de Janeiro (RJ) e Minas Gerais (MG). O prazo de entrega é de 3 a 5 dias úteis para SP e de 5 a 8 dias úteis para RJ e MG. A contagem começa no primeiro dia útil após a confirmação do pagamento. Sábados, domingos e feriados não entram na contagem. Outros estados não são atendidos nesta operação demonstrativa.\n\n---\n\n**Atraso ou problema na entrega** [F2]\n\nQuando o prazo informado no checkout já terminou, o atendimento deve verificar o pedido com a transportadora. O cliente pode abrir uma solicitação pela área Meus pedidos. A equipe humana analisa ocorrências de atraso, endereço incorreto ou entrega não reconhecida. Este assistente não consulta sistemas de pedidos nem confirma uma nova data de entrega.\n\n---\n\n**Retirada e entrega expressa** [F3]\n\nA loja não oferece retirada presencial nem entrega expressa no mesmo dia. O envio segue os prazos de entrega por estado descritos nesta base.",
+    "mode": "extractive",
+    "sources": [
+      {
+        "reference": "F1",
+        "score": 0.31564,
+        "id": "8e6167830e9e",
+        "source": "entregas.md",
+        "title": "Lume Casa — entregas e acompanhamento",
+        "section": "Regiões atendidas e prazo de entrega",
+        "text": "A Lume Casa atende São Paulo (SP), Rio de Janeiro (RJ) e Minas Gerais (MG). O prazo de entrega é de 3 a 5 dias úteis para SP e de 5 a 8 dias úteis para RJ e MG. A contagem começa no primeiro dia útil após a confirmação do pagamento. Sábados, domingos e feriados não entram na contagem. Outros estados não são atendidos nesta operação demonstrativa.",
+        "line_start": 6,
+        "line_end": 6,
+        "page": null
+      },
+      {
+        "reference": "F2",
+        "score": 0.15197,
+        "id": "aff2330d81fb",
+        "source": "entregas.md",
+        "title": "Lume Casa — entregas e acompanhamento",
+        "section": "Atraso ou problema na entrega",
+        "text": "Quando o prazo informado no checkout já terminou, o atendimento deve verificar o pedido com a transportadora. O cliente pode abrir uma solicitação pela área Meus pedidos. A equipe humana analisa ocorrências de atraso, endereço incorreto ou entrega não reconhecida. Este assistente não consulta sistemas de pedidos nem confirma uma nova data de entrega.",
+        "line_start": 15,
+        "line_end": 15,
+        "page": null
+      },
+      {
+        "reference": "F3",
+        "score": 0.14428,
+        "id": "28afdd4080a0",
+        "source": "entregas.md",
+        "title": "Lume Casa — entregas e acompanhamento",
+        "section": "Retirada e entrega expressa",
+        "text": "A loja não oferece retirada presencial nem entrega expressa no mesmo dia. O envio segue os prazos de entrega por estado descritos nesta base.",
+        "line_start": 18,
+        "line_end": 18,
+        "page": null
+      }
+    ],
+    "elapsed_ms": 2.1
+  }
+}

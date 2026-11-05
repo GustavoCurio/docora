@@ -1,0 +1,19 @@
+{
+  "executed_utc": "2026-11-05T09:09:48.430872+00:00",
+  "python": "3.12.16",
+  "openai_key_configured": false,
+  "embedding_download_allowed": false,
+  "endpoints": [
+    {
+      "path": "/_stcore/health",
+      "status": 200,
+      "body": "ok"
+    },
+    {
+      "path": "/",
+      "status": 200,
+      "body": "Página HTML servida"
+    }
+  ],
+  "scope": "Servidor Streamlit local sem chave; a execução da conversa está registrada nos relatórios runtime_hybrid e no AppTest."
+}

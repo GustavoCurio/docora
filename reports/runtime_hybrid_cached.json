@@ -1,0 +1,86 @@
+{
+  "executed_utc": "2026-11-05T09:09:08.973666+00:00",
+  "python": "3.12.16",
+  "platform": "Linux-6.12.94+-x86_64-with-glibc2.41",
+  "model": "Xenova/multilingual-e5-small",
+  "revision": "761b726dd34fb83930e26aab4e9ac3899aa1fa78",
+  "provider": [
+    "CPUExecutionProvider"
+  ],
+  "cache_preexisting": true,
+  "download_allowed": false,
+  "cache_bytes": 135391106,
+  "imports_ms": 778.3,
+  "first_index_build_ms": 1481.71,
+  "cached_model_index_build_ms": 172.89,
+  "first_answer_including_imports_ms": 2265.36,
+  "streamlit_boot_with_cached_model_ms": 359.71,
+  "peak_rss_mib_including_streamlit": 702.32,
+  "scope": "Processo Linux local, CPU, AppTest sem chave; modelo compartilhado com a interface. Não é medição dentro do Community Cloud nem teste de carga concorrente.",
+  "openai_calls": 0,
+  "question": "Em quanto tempo o pedido chega na capital paulista?",
+  "cli_answer": {
+    "status": "evidence_found",
+    "message": "Encontrei estas informações nos documentos:\n\n**Regiões atendidas e prazo de entrega** [F1]\n\nA Lume Casa atende São Paulo (SP), Rio de Janeiro (RJ) e Minas Gerais (MG). O prazo de entrega é de 3 a 5 dias úteis para SP e de 5 a 8 dias úteis para RJ e MG. A contagem começa no primeiro dia útil após a confirmação do pagamento. Sábados, domingos e feriados não entram na contagem. Outros estados não são atendidos nesta operação demonstrativa.\n\n---\n\n**Frete grátis** [F2]\n\nO frete é gratuito para entregas em São Paulo (SP) quando o valor dos produtos, depois dos descontos, é de pelo menos R$ 250,00. Para pedidos abaixo desse valor ou destinados a RJ e MG, o frete é calculado no checkout. A base de atendimento não contém uma tabela de valores de frete por CEP.",
+    "mode": "extractive",
+    "sources": [
+      {
+        "reference": "F1",
+        "score": 0.016393,
+        "id": "8e6167830e9e",
+        "source": "entregas.md",
+        "title": "Lume Casa — entregas e acompanhamento",
+        "section": "Regiões atendidas e prazo de entrega",
+        "text": "A Lume Casa atende São Paulo (SP), Rio de Janeiro (RJ) e Minas Gerais (MG). O prazo de entrega é de 3 a 5 dias úteis para SP e de 5 a 8 dias úteis para RJ e MG. A contagem começa no primeiro dia útil após a confirmação do pagamento. Sábados, domingos e feriados não entram na contagem. Outros estados não são atendidos nesta operação demonstrativa.",
+        "line_start": 6,
+        "line_end": 6,
+        "page": null
+      },
+      {
+        "reference": "F2",
+        "score": 0.016129,
+        "id": "cb1b9a2a9b55",
+        "source": "entregas.md",
+        "title": "Lume Casa — entregas e acompanhamento",
+        "section": "Frete grátis",
+        "text": "O frete é gratuito para entregas em São Paulo (SP) quando o valor dos produtos, depois dos descontos, é de pelo menos R$ 250,00. Para pedidos abaixo desse valor ou destinados a RJ e MG, o frete é calculado no checkout. A base de atendimento não contém uma tabela de valores de frete por CEP.",
+        "line_start": 9,
+        "line_end": 9,
+        "page": null
+      }
+    ],
+    "elapsed_ms": 4.22
+  },
+  "streamlit_answer": {
+    "status": "evidence_found",
+    "message": "Encontrei estas informações nos documentos:\n\n**Regiões atendidas e prazo de entrega** [F1]\n\nA Lume Casa atende São Paulo (SP), Rio de Janeiro (RJ) e Minas Gerais (MG). O prazo de entrega é de 3 a 5 dias úteis para SP e de 5 a 8 dias úteis para RJ e MG. A contagem começa no primeiro dia útil após a confirmação do pagamento. Sábados, domingos e feriados não entram na contagem. Outros estados não são atendidos nesta operação demonstrativa.\n\n---\n\n**Frete grátis** [F2]\n\nO frete é gratuito para entregas em São Paulo (SP) quando o valor dos produtos, depois dos descontos, é de pelo menos R$ 250,00. Para pedidos abaixo desse valor ou destinados a RJ e MG, o frete é calculado no checkout. A base de atendimento não contém uma tabela de valores de frete por CEP.",
+    "mode": "extractive",
+    "sources": [
+      {
+        "reference": "F1",
+        "score": 0.016393,
+        "id": "8e6167830e9e",
+        "source": "entregas.md",
+        "title": "Lume Casa — entregas e acompanhamento",
+        "section": "Regiões atendidas e prazo de entrega",
+        "text": "A Lume Casa atende São Paulo (SP), Rio de Janeiro (RJ) e Minas Gerais (MG). O prazo de entrega é de 3 a 5 dias úteis para SP e de 5 a 8 dias úteis para RJ e MG. A contagem começa no primeiro dia útil após a confirmação do pagamento. Sábados, domingos e feriados não entram na contagem. Outros estados não são atendidos nesta operação demonstrativa.",
+        "line_start": 6,
+        "line_end": 6,
+        "page": null
+      },
+      {
+        "reference": "F2",
+        "score": 0.016129,
+        "id": "cb1b9a2a9b55",
+        "source": "entregas.md",
+        "title": "Lume Casa — entregas e acompanhamento",
+        "section": "Frete grátis",
+        "text": "O frete é gratuito para entregas em São Paulo (SP) quando o valor dos produtos, depois dos descontos, é de pelo menos R$ 250,00. Para pedidos abaixo desse valor ou destinados a RJ e MG, o frete é calculado no checkout. A base de atendimento não contém uma tabela de valores de frete por CEP.",
+        "line_start": 9,
+        "line_end": 9,
+        "page": null
+      }
+    ],
+    "elapsed_ms": 3.47
+  }
+}
