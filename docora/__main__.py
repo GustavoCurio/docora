@@ -28,6 +28,8 @@ def main():
     ask = sub.add_parser("ask")
     ask.add_argument("question")
     for command in (ask, assessment):
+        command.add_argument("--reranker", choices=["none", "rules"], default=None,
+                             help="Padrão: DOCORA_RERANKER ou none; reordena até dez candidatos aceitos.")
         command.add_argument("--retriever", choices=["tfidf", "bm25", "hybrid"], default=None,
                              help="Padrão: DOCORA_RETRIEVER ou hybrid, com fallback TF-IDF.")
     sub.add_parser("prepare-model", help="Baixa o encoder público para o cache local; não faz chamadas à OpenAI.")
@@ -38,11 +40,12 @@ def main():
         model, reason = load_embedder()
         print("Modelo local pronto no cache." if model else reason)
         raise SystemExit(0 if model else 1)
-    index = KnowledgeIndex(demo_chunks(), retriever=args.retriever)
+    index = KnowledgeIndex(demo_chunks(), retriever=args.retriever, reranker=args.reranker)
     if args.command == "ask":
         result = answer_question(args.question, index).to_dict()
         result.update(retriever_requested=index.requested_retriever, retriever_active=index.active_retriever,
-                      fallback_reason=index.fallback_reason)
+                      fallback_reason=index.fallback_reason, reranker_requested=index.requested_reranker,
+                      reranker_active=index.active_reranker, reranker_fallback_reason=index.reranker_fallback_reason)
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
         suites = ["original", "heldout"] if args.suite == "all" else [args.suite]

@@ -27,7 +27,8 @@ class AskRequest(BaseModel):
 @app.get("/health")
 def health():
     """Retorna disponibilidade e número de trechos, inicializando a base se necessário."""
-    return {"status": "ok", "chunks": len(index().chunks), "retriever_active": index().active_retriever}
+    return {"status": "ok", "chunks": len(index().chunks), "retriever_active": index().active_retriever,
+            "reranker_active": index().active_reranker}
 
 
 @app.get("/sources")
@@ -56,7 +57,10 @@ def ask(body: AskRequest):
     if body.mode == "generative" and not body.approve_external_processing:
         raise HTTPException(403, "A síntese generativa exige autorização para enviar a pergunta e os trechos ao provedor.")
     try:
-        return answer_question(body.question, index(), body.mode).to_dict()
+        result = answer_question(body.question, index(), body.mode).to_dict()
+        result.update(retriever_active=index().active_retriever, reranker_active=index().active_reranker,
+                      reranker_fallback_reason=index().reranker_fallback_reason)
+        return result
     except ValueError as error:
         raise HTTPException(400, str(error)) from error
     except ProviderError as error:

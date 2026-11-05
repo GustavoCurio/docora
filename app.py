@@ -57,15 +57,15 @@ def embedding_resource():
 
 
 @st.cache_resource
-def demo_index(retriever):
+def demo_index(retriever, reranker):
     """Cria o índice demonstrativo compartilhado pelo cache de recursos do Streamlit."""
     if retriever == "hybrid":
         model, reason = embedding_resource()
-        index = KnowledgeIndex(demo_chunks(), retriever=retriever, embedder=model)
+        index = KnowledgeIndex(demo_chunks(), retriever=retriever, embedder=model, reranker=reranker)
         if reason:
             index.fallback_reason = reason
         return index
-    return KnowledgeIndex(demo_chunks(), retriever=retriever)
+    return KnowledgeIndex(demo_chunks(), retriever=retriever, reranker=reranker)
 
 with references:
     sources_slot = st.container()
@@ -77,13 +77,16 @@ with references:
         retriever = st.selectbox("Método de busca", list(retriever_names),
                                 index=list(retriever_names).index(configured_retriever),
                                 format_func=retriever_names.get, key="retriever")
+        reranker_names = {"none": "Sem reordenação", "rules": "Regras locais"}
+        reranker = server_setting("DOCORA_RERANKER") or "none"
+        reranker = reranker if reranker in reranker_names else "none"
         collection = st.radio("Documentos usados na consulta", ["Loja demonstrativa", "Meus documentos"], key="collection")
         st.button("Carregar exemplo", on_click=load_example, width="stretch")
         if st.session_state.pop("example_loaded", False):
             st.success("Exemplo carregado: Lume Casa. Escolha uma pergunta rápida ou escreva sua dúvida.")
         index = None
         if collection == "Loja demonstrativa":
-            index = demo_index(retriever)
+            index = demo_index(retriever, reranker)
             st.caption("Lume Casa · loja fictícia. Conteúdo demonstrativo.")
         else:
             uploaded = st.file_uploader("Enviar documentos", type=["md", "txt", "pdf"], accept_multiple_files=True)
@@ -93,7 +96,7 @@ with references:
             elif len(uploaded) > 5:
                 st.error("Selecione no máximo 5 documentos.")
             else:
-                upload_key = sha256(retriever.encode() + b"".join(f.name.encode() + f.getvalue() for f in uploaded)).hexdigest()
+                upload_key = sha256((retriever + reranker).encode() + b"".join(f.name.encode() + f.getvalue() for f in uploaded)).hexdigest()
                 try:
                     if st.session_state.get("upload_key") != upload_key:
                         chunks = [c for f in uploaded for c in ingest_bytes(f.name, f.getvalue())]
@@ -101,11 +104,11 @@ with references:
                             st.info("A busca híbrida calcula os vetores dos documentos nesta sessão. Isso pode levar alguns instantes.")
                             model, reason = embedding_resource()
                             with st.spinner("Preparando a busca dos documentos…"):
-                                upload_index = KnowledgeIndex(chunks, retriever=retriever, embedder=model)
+                                upload_index = KnowledgeIndex(chunks, retriever=retriever, embedder=model, reranker=reranker)
                             if reason:
                                 upload_index.fallback_reason = reason
                         else:
-                            upload_index = KnowledgeIndex(chunks, retriever=retriever)
+                            upload_index = KnowledgeIndex(chunks, retriever=retriever, reranker=reranker)
                         st.session_state["upload_index"] = upload_index
                         st.session_state["upload_key"] = upload_key
                     index = st.session_state["upload_index"]
@@ -113,6 +116,9 @@ with references:
                     st.error(str(error))
         if index:
             st.caption(f"Busca ativa: {retriever_names[index.active_retriever]}")
+            st.caption(f"Reordenação ativa: {reranker_names[index.active_reranker]}")
+            if index.reranker_fallback_reason:
+                st.caption(index.reranker_fallback_reason)
             if index.fallback_reason:
                 st.caption("Modelo local ausente ou indisponível. A consulta usa TF-IDF.")
             documents = sorted({c.source for c in index.chunks})
@@ -139,7 +145,7 @@ with references:
             st.caption("Consulta local: respostas reproduzidas dos documentos, com referências.")
 
 # Trocar base ou modo inicia outro histórico para não apresentar fontes de um contexto anterior.
-context_key = sha256((mode + retriever + ("|".join(c.id for c in index.chunks) if index else "empty")).encode()).hexdigest()
+context_key = sha256((mode + retriever + reranker + ("|".join(c.id for c in index.chunks) if index else "empty")).encode()).hexdigest()
 if st.session_state.get("context_key") != context_key:
     st.session_state["history"] = []
     st.session_state["context_key"] = context_key

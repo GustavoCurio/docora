@@ -191,7 +191,7 @@ class KnowledgeIndex:
     A base é deduplicada pelo ID do trecho e os vetorizadores aprendem apenas
     o corpus recebido. Escores TF-IDF, BM25 e RRF têm escalas diferentes.
     """
-    def __init__(self, chunks, retriever=None, embedder=_AUTO_EMBEDDER):
+    def __init__(self, chunks, retriever=None, embedder=_AUTO_EMBEDDER, reranker=None):
         """Prepara TF-IDF, BM25 e, se disponível, vetores locais do corpus.
 
         Args:
@@ -218,6 +218,11 @@ class KnowledgeIndex:
         self.word_matrix = self.word.fit_transform(corpus)
         self.char_matrix = self.char.fit_transform(corpus)
         self.requested_retriever = retriever or os.environ.get("DOCORA_RETRIEVER", "hybrid")
+        self.requested_reranker = reranker or os.environ.get("DOCORA_RERANKER", "none")
+        if self.requested_reranker not in {"none", "rules"}:
+            raise ValueError("Reranker inválido. Use none ou rules.")
+        self.active_reranker = self.requested_reranker
+        self.reranker_fallback_reason = None
         if self.requested_retriever not in {"tfidf", "bm25", "hybrid"}:
             raise ValueError("Recuperador inválido. Use tfidf, bm25 ou hybrid.")
         self.active_retriever = self.requested_retriever
@@ -255,6 +260,17 @@ class KnowledgeIndex:
         return vectors / norms
 
     def search(self, question, top_k=3, min_score=None):
+        """Aplica reranking ao top-10 após os filtros, antes do corte de saída."""
+        if top_k < 1:
+            raise ValueError("top_k deve ser positivo.")
+        if self.active_reranker == "none":
+            return self._retrieve(question, top_k, min_score)
+        from .reranking import TOP_N, rules_rerank
+        candidates = self._retrieve(question, max(TOP_N, top_k), min_score)
+        ordered = rules_rerank(question, candidates[:TOP_N])
+        return (ordered + candidates[TOP_N:])[:top_k]
+
+    def _retrieve(self, question, top_k=3, min_score=None):
         """Busca com o recuperador ativo; falhas do encoder voltam ao TF-IDF.
 
         BM25 conserva os filtros lexicais do TF-IDF e muda a ordenação. O
