@@ -161,7 +161,11 @@ with references:
             if getattr(index, "reranker_fallback_reason", None):
                 st.caption(index.reranker_fallback_reason)
             if getattr(index, "fallback_reason", None):
-                st.caption(index.fallback_reason)
+                reason = index.fallback_reason
+                if reason.startswith("Encoder local") or "Embeddings desativados" in reason:
+                    st.caption("Modelo local ausente ou indisponível. A consulta usa TF-IDF.")
+                else:
+                    st.caption(reason)
             documents = sorted({c.source for c in index.chunks})
             st.caption(f"{len(documents)} documentos disponíveis · {len(index.chunks)} trechos")
             with st.expander("Explorar documentos"):
