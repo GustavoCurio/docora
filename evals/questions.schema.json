@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Perguntas de avaliação do Docora",
+  "type": "array",
+  "minItems": 1,
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "required": ["question", "expected_status"],
+    "properties": {
+      "id": {"type": "string", "minLength": 1},
+      "question": {"type": "string", "minLength": 1, "maxLength": 1500},
+      "expected_status": {"enum": ["evidence_found", "not_found", "needs_human"]},
+      "source": {"type": "string", "minLength": 1},
+      "section": {"type": "string", "minLength": 1},
+      "acceptable_sources": {
+        "type": "array", "minItems": 1, "uniqueItems": true,
+        "items": {
+          "type": "object", "additionalProperties": false,
+          "required": ["source", "section"],
+          "properties": {"source": {"type": "string", "minLength": 1}, "section": {"type": "string", "minLength": 1}}
+        }
+      }
+    },
+    "allOf": [{
+      "if": {"properties": {"expected_status": {"const": "evidence_found"}}},
+      "then": {"oneOf": [{"required": ["source", "section"], "not": {"required": ["acceptable_sources"]}}, {"required": ["acceptable_sources"], "not": {"anyOf": [{"required": ["source"]}, {"required": ["section"]}]}}]},
+      "else": {"not": {"anyOf": [{"required": ["source"]}, {"required": ["section"]}, {"required": ["acceptable_sources"]}]}}
+    }]
+  }
+}
